@@ -167,7 +167,7 @@ export default function ChatInterface({ user }) {
                 <div className="flex items-start gap-2">
                   <MessageSquare className="w-4 h-4 text-gray-400 mt-1 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-white truncate">{thread.title || thread.query}</p>
+                    <p className="text-sm text-white truncate">{thread.title || thread.messages?.[0]?.query || thread.query || 'Untitled'}</p>
                     <p className="text-xs text-gray-500 mt-1">
                       {new Date(thread.timestamp).toLocaleDateString()}
                     </p>
