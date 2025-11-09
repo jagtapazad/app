@@ -301,14 +301,9 @@ async def execute_chat_query(
 ):
     """Execute query with agent chain"""
     user = await get_current_user(authorization, session_token)
-    if not user:
-        # For development: allow without auth but don't save to history
-        result = await orchestrator.execute_agent_chain(
-            request.query,
-            request.agent_chain,
-            request.fetch_ui
-        )
-        return result
+    
+    # For development: use demo user if not authenticated
+    user_id = user.id if user else "demo-user-123"
     
     # Execute agent chain
     result = await orchestrator.execute_agent_chain(
@@ -319,7 +314,7 @@ async def execute_chat_query(
     
     # Save to chat history
     chat_message = ChatMessage(
-        user_id=user.id,
+        user_id=user_id,
         query=request.query,
         agent_chain=request.agent_chain,
         response=result,
@@ -336,7 +331,7 @@ async def execute_chat_query(
         agent = await db.agents.find_one({"id": agent_info["agent_id"]})
         if agent:
             analytics = AnalyticsEntry(
-                user_id=user.id,
+                user_id=user_id,
                 agent_id=agent_info["agent_id"],
                 agent_name=agent_info["agent_name"],
                 tokens_used=500,
@@ -346,11 +341,12 @@ async def execute_chat_query(
             analytics_doc['timestamp'] = analytics_doc['timestamp'].isoformat()
             await db.analytics.insert_one(analytics_doc)
             
-            # Update user credits
-            await db.user_credits.update_one(
-                {"user_id": user.id},
-                {"$inc": {"used_credits": agent.get("cost_per_query", 0.01)}}
-            )
+            # Update user credits if authenticated
+            if user:
+                await db.user_credits.update_one(
+                    {"user_id": user_id},
+                    {"$inc": {"used_credits": agent.get("cost_per_query", 0.01)}}
+                )
     
     return result
 
