@@ -4,7 +4,6 @@ import { Toaster } from 'sonner';
 import Landing from './pages/Landing';
 import ChatInterface from './pages/ChatInterface';
 import Marketplace from './pages/Marketplace';
-import MyAgents from './pages/MyAgents';
 import Pricing from './pages/Pricing';
 import { processSession, getCurrentUser } from './utils/api';
 import './App.css';
