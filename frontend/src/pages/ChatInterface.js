@@ -45,7 +45,7 @@ export default function ChatInterface({ user }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!query.trim() || isExecuting) return;
+    if (!query.trim() || isExecuting || !isNewChatActive) return;
 
     setIsExecuting(true);
     const userQuery = query;
@@ -64,6 +64,36 @@ export default function ChatInterface({ user }) {
     setThreads(prev => [newThread, ...prev]);
     setQuery('');
     setAgentChain([]);
+    setIsNewChatActive(false);
+
+    try {
+      const response = await executeChatQuery({
+        query: userQuery,
+        agent_chain: currentAgentChain,
+        fetch_ui: fetchUI,
+        personalized
+      });
+
+      const updatedThread = {
+        ...newThread,
+        response: response.data,
+        agent_chain: response.data.agent_chain || currentAgentChain,
+        isLoading: false
+      };
+      
+      setCurrentThread(updatedThread);
+      setThreads(prev => prev.map(t => t.id === newThread.id ? updatedThread : t));
+      toast.success('Response received!');
+    } catch (error) {
+      toast.error('Failed to execute query');
+      console.error('Execution error:', error);
+      setThreads(prev => prev.filter(t => t.id !== newThread.id));
+      setCurrentThread(null);
+      setIsNewChatActive(true);
+    } finally {
+      setIsExecuting(false);
+    }
+  };
 
     try {
       const response = await executeChatQuery({
