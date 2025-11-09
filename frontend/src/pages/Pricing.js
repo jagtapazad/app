@@ -4,7 +4,7 @@ import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { getAnalytics } from '@/utils/api';
 import { toast } from 'sonner';
 
-export default function Analytics({ user }) {
+export default function Pricing({ user }) {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -17,7 +17,7 @@ export default function Analytics({ user }) {
       const response = await getAnalytics();
       setAnalytics(response.data);
     } catch (error) {
-      toast.error('Failed to load analytics');
+      toast.error('Failed to load pricing data');
     } finally {
       setLoading(false);
     }
