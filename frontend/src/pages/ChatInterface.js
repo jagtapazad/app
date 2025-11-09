@@ -597,7 +597,32 @@ export default function ChatInterface({ user }) {
         <div className="border-t border-white/10 bg-black/80 backdrop-blur-xl">
           <div className="max-w-4xl mx-auto px-6 py-6">
             {/* Controls */}
-            <div className="flex items-center gap-4 mb-3">
+            <div className="flex items-center gap-6 mb-3">
+              {/* Search Mode Dropdown */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-400">Mode:</span>
+                <Select value={searchMode} onValueChange={setSearchMode}>
+                  <SelectTrigger className="h-8 w-28 bg-white/5 border-white/20 text-white text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-black/95 border-white/20">
+                    <SelectItem value="quick" className="text-white hover:bg-white/10">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-green-400"></div>
+                        <span>Quick</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="detailed" className="text-white hover:bg-white/10">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+                        <span>Detailed</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Personalize Toggle */}
               <div className="flex items-center gap-2">
                 <Switch checked={personalized} onCheckedChange={setPersonalized} />
                 <span className="text-xs text-gray-400">Personalize</span>
