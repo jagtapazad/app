@@ -399,16 +399,9 @@ export default function Landing() {
               <p className="text-gray-300 mb-6 leading-relaxed">
                 "The ability to get comprehensive insights from multiple AI agents simultaneously is a game-changer. We've seen a 60% reduction in research time."
               </p>
-              <div className="flex items-center gap-3">
-                <img 
-                  src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=faces" 
-                  alt="Priya Sharma"
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-                <div>
-                  <div className="text-white font-medium">Priya Sharma</div>
-                  <div className="text-gray-500 text-sm">Head of Strategy, Zepto</div>
-                </div>
+              <div>
+                <div className="text-white font-medium">Priya Sharma</div>
+                <div className="text-gray-500 text-sm">Strategy, Zepto</div>
               </div>
             </div>
 
