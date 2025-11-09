@@ -165,6 +165,9 @@ export default function ChatInterface({ user }) {
         return t;
       }));
       
+      // Reload threads from backend to get persisted data
+      setTimeout(() => loadThreads(), 1000);
+      
     } catch (error) {
       clearInterval(loadingInterval);
       toast.error('Failed to execute query');
