@@ -249,6 +249,14 @@ export default function ChatInterface({ user }) {
     if (!window.confirm('Delete this conversation?')) return;
     
     try {
+      // Delete from database - delete all messages with this thread_id
+      await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/chat/thread/${threadId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('session_token')}`
+        }
+      });
+      
       // Remove from state
       setThreads(prev => prev.filter(t => t.id !== threadId));
       
@@ -259,6 +267,7 @@ export default function ChatInterface({ user }) {
       
       toast.success('Conversation deleted');
     } catch (error) {
+      console.error('Delete error:', error);
       toast.error('Failed to delete conversation');
     }
   };
