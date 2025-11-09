@@ -243,6 +243,26 @@ export default function ChatInterface({ user }) {
     toast.success('Copied to clipboard');
   };
 
+  const deleteThread = async (threadId, e) => {
+    e.stopPropagation();
+    
+    if (!window.confirm('Delete this conversation?')) return;
+    
+    try {
+      // Remove from state
+      setThreads(prev => prev.filter(t => t.id !== threadId));
+      
+      // Clear current thread if it's the one being deleted
+      if (currentThread?.id === threadId) {
+        setCurrentThread(null);
+      }
+      
+      toast.success('Conversation deleted');
+    } catch (error) {
+      toast.error('Failed to delete conversation');
+    }
+  };
+
   const filteredThreads = threads.filter(t => 
     t.title?.toLowerCase().includes(searchHistory.toLowerCase())
   );
