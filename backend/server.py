@@ -409,6 +409,24 @@ async def edit_message_section(
     
     return {"response": updated_response}
 
+@api_router.delete("/chat/thread/{thread_id}")
+async def delete_thread(
+    thread_id: str,
+    authorization: Optional[str] = Header(None),
+    session_token: Optional[str] = Header(None)
+):
+    """Delete all messages in a thread"""
+    user = await get_current_user(authorization, session_token)
+    user_id = user.id if user else "demo-user-123"
+    
+    # Delete all messages with this thread_id
+    result = await db.chat_history.delete_many({"thread_id": thread_id, "user_id": user_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Thread not found")
+    
+    return {"message": f"Deleted {result.deleted_count} messages", "deleted_count": result.deleted_count}
+
 # ===== ANALYTICS ENDPOINTS =====
 @api_router.get("/analytics")
 async def get_analytics(
