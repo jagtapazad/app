@@ -76,52 +76,28 @@ Available agents: Perplexity, GPT Researcher, Scira AI, Exa, OpenAI Research"""
     
     async def synthesize_response(self, query: str, agent_results: List[Dict], fetch_ui: bool = False) -> Dict[str, Any]:
         """
-        Use GPT-5 to synthesize all agent results into a cohesive response
-        If fetch_ui is True, also generate UI components (graphs, tables, etc.)
+        Use GPT-4o-mini for faster synthesis
         """
         chat = LlmChat(
             api_key=self.llm_key,
             session_id=f"synthesize_{hash(query)}",
-            system_message="""You are a UI generation agent for Sagent AI. Your job is to:
-1. Synthesize all agent results into a cohesive, well-formatted response
-2. If fetch_ui is True, suggest UI components (graphs, tables, cards) for data visualization
-3. Return a JSON object with markdown content and UI components
-
-Return JSON format:
+            system_message="""Synthesize agent results into a cohesive response. Return JSON:
 {
-  "markdown": "# Title\\n\\nContent here...",
-  "ui_components": [
-    {"type": "graph", "data": {...}, "config": {...}},
-    {"type": "table", "data": [...]}
-  ],
+  "markdown": "# Title\\n\\nContent...",
+  "ui_components": [],
   "summary": "Brief summary"
 }"""
         )
         
+        # Use gpt-4o-mini for speed
+        chat.with_model("openai", "gpt-4o-mini")
+        
+        results_text = "\\n\\n".join([f"**{r['agent_name']}**: {r['content']}" for r in agent_results])
+        
+        message = UserMessage(text=f"Query: {query}\\n\\nResults:\\n{results_text}\\n\\nSynthesize:")
+        
         try:
-            chat.with_model("openai", "gpt-5")
-        except:
-            chat.with_model("openai", "gpt-4o")
-        
-        results_text = "\\n\\n".join([
-            f"**{r['agent_name']}** ({r['purpose']}):\\n{r['content']}" 
-            for r in agent_results
-        ])
-        
-        message = UserMessage(
-            text=f"""Query: {query}
-Fetch UI: {fetch_ui}
-
-Agent Results:
-{results_text}
-
-Synthesize into a cohesive response with {'' if not fetch_ui else 'UI components for visualizations.'}"""
-        )
-        
-        response = await chat.send_message(message)
-        
-        # Parse JSON response
-        try:
+            response = await chat.send_message(message)
             content = response.strip()
             if "```json" in content:
                 content = content.split("```json")[1].split("```")[0]
@@ -131,7 +107,6 @@ Synthesize into a cohesive response with {'' if not fetch_ui else 'UI components
             synthesized = json.loads(content.strip())
             return synthesized
         except:
-            # Fallback response
             return {
                 "markdown": f"# Results for: {query}\\n\\n" + results_text,
                 "ui_components": [],
