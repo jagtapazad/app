@@ -382,17 +382,17 @@ export default function ChatInterface({ user }) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto pb-32">
-          <div className="max-w-4xl mx-auto px-6 py-8">
+        <main className="flex-1 overflow-y-auto pb-40">
+          <div className="max-w-4xl mx-auto px-6 py-4">
             {!currentThread ? (
-              <div className="text-center py-20">
+              <div className="text-center py-12">
                 <img 
                   src="https://customer-assets.emergentagent.com/job_smart-dispatch-7/artifacts/37zbur7o_Screenshot%202025-11-05%20at%2011.17.40%20PM.png"
                   alt="Sagent AI Logo"
                   className="w-20 h-20 mx-auto mb-6 object-contain"
                 />
                 <h2 className="text-4xl font-bold text-white mb-4">What can I help with?</h2>
-                <p className="text-gray-400 text-lg mb-12">Ask a question and let our specialized AI agents research it for you</p>
+                <p className="text-gray-400 text-lg mb-8">Ask a question and let our specialized AI agents research it for you</p>
                 
                 {/* Example Prompts */}
                 <div className="grid md:grid-cols-2 gap-4 max-w-3xl mx-auto">
