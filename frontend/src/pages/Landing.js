@@ -383,16 +383,9 @@ export default function Landing() {
               <p className="text-gray-300 mb-6 leading-relaxed">
                 "Sagent AI has completely transformed our research workflow. What used to take our team 3-4 hours now happens in minutes. The multi-agent routing is brilliant."
               </p>
-              <div className="flex items-center gap-3">
-                <img 
-                  src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=faces" 
-                  alt="Rajesh Kumar"
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-                <div>
-                  <div className="text-white font-medium">Rajesh Kumar</div>
-                  <div className="text-gray-500 text-sm">VP of Product, Meesho</div>
-                </div>
+              <div>
+                <div className="text-white font-medium">Rajesh Kumar</div>
+                <div className="text-gray-500 text-sm">Product, Meesho</div>
               </div>
             </div>
 
