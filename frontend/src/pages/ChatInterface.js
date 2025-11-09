@@ -369,10 +369,6 @@ export default function ChatInterface({ user }) {
             {/* Controls */}
             <div className="flex items-center gap-4 mb-3">
               <div className="flex items-center gap-2">
-                <Switch checked={fetchUI} onCheckedChange={setFetchUI} />
-                <span className="text-xs text-gray-400">Fetch UI</span>
-              </div>
-              <div className="flex items-center gap-2">
                 <Switch checked={personalized} onCheckedChange={setPersonalized} />
                 <span className="text-xs text-gray-400">Personalize</span>
               </div>
