@@ -272,6 +272,103 @@ export default function Landing() {
           </div>
         </div>
 
+        {/* Chat Interface Demo */}
+        <div className="mb-32">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-white mb-4">See It In Action</h2>
+            <p className="text-gray-400 text-lg">Watch how Sagent AI delivers comprehensive, multi-dimensional research</p>
+          </div>
+          
+          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 max-w-4xl mx-auto">
+            {/* Demo Chat Query */}
+            <div className="mb-6">
+              <h3 className="text-2xl font-bold text-white mb-3">Find me reddits where users want 10-minute fashion delivery</h3>
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <Clock className="w-4 h-4" />
+                <span>Research completed in 12 seconds</span>
+              </div>
+            </div>
+
+            {/* Demo Answer */}
+            <div className="space-y-6">
+              <div>
+                <div className="text-xs text-gray-500 uppercase tracking-wider mb-3">Answer</div>
+                <div className="text-gray-300 leading-relaxed space-y-4">
+                  <p className="text-lg">
+                    <strong className="text-white">10-minute fashion delivery</strong> is a concept that has sparked curiosity and debate among Reddit users, 
+                    especially in entrepreneurial and urban communities. Many users are intrigued by the idea of getting clothes delivered as quickly 
+                    as groceries or food, but there are also concerns about feasibility, worker conditions, and real user demand.
+                  </p>
+                  
+                  <div className="bg-black/30 p-4 rounded-lg border-l-4 border-blue-500">
+                    <p className="text-sm italic text-gray-400">
+                      "An instant fashion delivery app which can deliver you clothes just like blinkit delivers groceries or zomato delivers food."
+                    </p>
+                    <p className="text-xs text-gray-500 mt-2">— r/StartUpIndia</p>
+                  </div>
+
+                  <h4 className="text-xl font-semibold text-white mt-6">Reddit Threads Discussing 10-Minute Fashion Delivery</h4>
+                  
+                  <div className="space-y-3">
+                    <div className="bg-white/5 p-4 rounded-lg hover:bg-white/10 transition-all">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded bg-orange-500/20 flex items-center justify-center flex-shrink-0">
+                          <span className="text-orange-400 font-bold">1</span>
+                        </div>
+                        <div>
+                          <h5 className="text-white font-medium mb-1">Would you use an Instant Fashion Delivery App?</h5>
+                          <p className="text-sm text-gray-400">reddit.com - Discussion on practicality and demand</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white/5 p-4 rounded-lg hover:bg-white/10 transition-all">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded bg-orange-500/20 flex items-center justify-center flex-shrink-0">
+                          <span className="text-orange-400 font-bold">2</span>
+                        </div>
+                        <div>
+                          <h5 className="text-white font-medium mb-1">Fashion Delivery in 29 minutes - A Good Idea?</h5>
+                          <p className="text-sm text-gray-400">r/Startup_Ideas - Users debate implementation challenges</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white/5 p-4 rounded-lg hover:bg-white/10 transition-all">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded bg-orange-500/20 flex items-center justify-center flex-shrink-0">
+                          <span className="text-orange-400 font-bold">3</span>
+                        </div>
+                        <div>
+                          <h5 className="text-white font-medium mb-1">Worked part-time at Blinkit — 10-minute delivery reality</h5>
+                          <p className="text-sm text-gray-400">r/pune - Worker shares experience with quick delivery</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="mt-6 text-gray-400">
+                    Several Reddit communities have explored the idea of <strong className="text-white">instant or 10-minute fashion delivery apps</strong>, 
+                    with users weighing in on whether they would use such a service and what challenges might arise.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Agent Badges */}
+            <div className="mt-6 pt-6 border-t border-white/10">
+              <div className="text-xs text-gray-500 mb-3">Powered by</div>
+              <div className="flex gap-2 flex-wrap">
+                {['Perplexity', 'Exa', 'Scira AI'].map(agent => (
+                  <span key={agent} className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-md text-xs text-blue-300">
+                    {agent}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Testimonials Section */}
         <div className="mb-32">
           <h2 className="text-4xl font-bold text-center text-white mb-12">Trusted by Industry Leaders</h2>
