@@ -11,6 +11,7 @@ export default function Landing() {
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,11 +25,21 @@ export default function Landing() {
       await submitWaitlist({ email, name });
       setSubmitted(true);
       toast.success('Successfully joined the waitlist!');
+      setTimeout(() => {
+        setIsWaitlistOpen(false);
+      }, 2000);
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to join waitlist');
     } finally {
       setLoading(false);
     }
+  };
+
+  const openWaitlist = () => {
+    setIsWaitlistOpen(true);
+    setSubmitted(false);
+    setEmail('');
+    setName('');
   };
 
   return (
