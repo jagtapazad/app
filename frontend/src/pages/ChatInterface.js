@@ -148,6 +148,9 @@ export default function ChatInterface({ user }) {
 
       clearInterval(loadingInterval);
 
+      // Get the thread_id from response (backend confirms which thread it saved to)
+      const savedThreadId = response.data.thread_id || currentThread?.id || `thread-${Date.now()}`;
+
       // Update the last message with response
       setCurrentThread(prev => {
         if (!prev) return prev;
@@ -160,11 +163,11 @@ export default function ChatInterface({ user }) {
             isLoading: false
           };
         }
-        return { ...prev, messages: updatedMessages };
+        return { ...prev, id: savedThreadId, messages: updatedMessages };
       });
       
       setThreads(prev => prev.map(t => {
-        if (currentThread && t.id === currentThread.id) {
+        if (currentThread && (t.id === currentThread.id || t.id === savedThreadId)) {
           const updatedMessages = [...(t.messages || [])];
           const lastMsgIndex = updatedMessages.length - 1;
           if (lastMsgIndex >= 0) {
@@ -174,7 +177,7 @@ export default function ChatInterface({ user }) {
               isLoading: false
             };
           }
-          return { ...t, messages: updatedMessages };
+          return { ...t, id: savedThreadId, messages: updatedMessages };
         }
         return t;
       }));
