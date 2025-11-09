@@ -127,6 +127,7 @@ export default function ChatInterface({ user }) {
     try {
       const response = await executeChatQuery({
         query: userQuery,
+        thread_id: currentThread?.id || null,
         agent_chain: currentAgentChain,
         fetch_ui: fetchUI,
         personalized
