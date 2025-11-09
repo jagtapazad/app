@@ -252,7 +252,7 @@ export default function ChatInterface({ user }) {
       {/* Left Sidebar */}
       <aside className={`${sidebarOpen ? 'w-72' : 'w-0'} border-r border-white/10 bg-black/50 backdrop-blur-sm transition-all duration-300 overflow-hidden flex flex-col`}>
         <div className="p-4 border-b border-white/10">
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-2 mb-4">
             <img 
               src="https://customer-assets.emergentagent.com/job_smart-dispatch-7/artifacts/ghe15bl1_Screenshot%202025-11-05%20at%2011.17.40%20PM.png" 
               alt="Sagent AI Logo" 
