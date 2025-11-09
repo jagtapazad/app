@@ -47,30 +47,28 @@ export default function ChatInterface({ user }) {
     e.preventDefault();
     if (!query.trim() || isExecuting) return;
 
-    // Check if New Chat was clicked
-    if (!isNewChatActive) {
-      toast.error('Please click "New Chat" to start a new conversation');
-      return;
-    }
-
     setIsExecuting(true);
     const userQuery = query;
     const currentAgentChain = agentChain.length > 0 ? agentChain : [{ agent_name: 'Perplexity', purpose: 'Answer query' }];
     
-    const newThread = {
-      id: `thread-${Date.now()}`,
-      query: userQuery,
-      agent_chain: currentAgentChain,
-      response: null,
-      timestamp: new Date().toISOString(),
-      isLoading: true
-    };
+    // Create new thread if New Chat was clicked OR if no current thread exists
+    if (isNewChatActive || !currentThread) {
+      const newThread = {
+        id: `thread-${Date.now()}`,
+        query: userQuery,
+        agent_chain: currentAgentChain,
+        response: null,
+        timestamp: new Date().toISOString(),
+        isLoading: true
+      };
+      
+      setCurrentThread(newThread);
+      setThreads(prev => [newThread, ...prev]);
+      setIsNewChatActive(false);
+    }
     
-    setCurrentThread(newThread);
-    setThreads(prev => [newThread, ...prev]);
     setQuery('');
     setAgentChain([]);
-    setIsNewChatActive(false);
 
     try {
       const response = await executeChatQuery({
@@ -81,21 +79,21 @@ export default function ChatInterface({ user }) {
       });
 
       const updatedThread = {
-        ...newThread,
+        ...currentThread,
+        id: currentThread?.id || `thread-${Date.now()}`,
+        query: userQuery,
         response: response.data,
         agent_chain: response.data.agent_chain || currentAgentChain,
-        isLoading: false
+        isLoading: false,
+        timestamp: currentThread?.timestamp || new Date().toISOString()
       };
       
       setCurrentThread(updatedThread);
-      setThreads(prev => prev.map(t => t.id === newThread.id ? updatedThread : t));
+      setThreads(prev => prev.map(t => t.id === updatedThread.id ? updatedThread : t));
       toast.success('Response received!');
     } catch (error) {
       toast.error('Failed to execute query');
       console.error('Execution error:', error);
-      setThreads(prev => prev.filter(t => t.id !== newThread.id));
-      setCurrentThread(null);
-      setIsNewChatActive(true);
     } finally {
       setIsExecuting(false);
     }
