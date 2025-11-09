@@ -73,8 +73,8 @@ export default function Pricing({ user }) {
       <main className="relative z-10 max-w-7xl mx-auto px-6 py-12">
         {/* Header Section */}
         <div className="mb-12">
-          <h1 className="text-5xl font-bold text-white mb-4">Analytics</h1>
-          <p className="text-xl text-gray-400">Track your AI agent usage and performance</p>
+          <h1 className="text-5xl font-bold text-white mb-4">Pricing</h1>
+          <p className="text-xl text-gray-400">Track your AI agent usage and costs</p>
         </div>
 
         {loading ? (
