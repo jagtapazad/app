@@ -155,11 +155,11 @@ export default function ChatInterface({ user }) {
           ) : (
             messages.map((msg, idx) => (
               <div key={idx} className="space-y-4">
-                {/* User Query - Right aligned as heading */}
-                <div className="flex justify-end">
+                {/* User Query - Left aligned as heading */}
+                <div className="flex justify-start">
                   <div className="max-w-3xl">
-                    <h2 className="text-2xl font-bold text-white text-right mb-2">{msg.query}</h2>
-                    <div className="text-sm text-gray-500 text-right">
+                    <h2 className="text-2xl font-bold text-white mb-2">{msg.query}</h2>
+                    <div className="text-sm text-gray-500">
                       {new Date(msg.timestamp).toLocaleTimeString()}
                     </div>
                   </div>
