@@ -225,69 +225,65 @@ export default function ChatInterface({ user }) {
                 <p className="text-gray-400 text-lg">Click "New Chat" to start a conversation</p>
               </div>
             ) : (
-              /* Thread Display - Perplexity Style */
-              <div className="space-y-6">
-                {/* Query Header */}
+              /* Thread Display - ChatGPT/Perplexity Style with Messages */
+              <div className="space-y-8">
+                {/* Thread Title */}
                 <div>
-                  <h1 className="text-3xl font-bold text-white mb-2">{currentThread.query}</h1>
+                  <h1 className="text-3xl font-bold text-white mb-2">{currentThread.title || currentThread.query}</h1>
                   <div className="flex items-center gap-2 text-sm text-gray-500">
                     <Clock className="w-4 h-4" />
                     <span>{new Date(currentThread.timestamp).toLocaleString()}</span>
                   </div>
                 </div>
 
-                {/* Loading State */}
-                {currentThread.isLoading && (
-                  <div className="flex items-center gap-3 text-gray-400 py-6">
-                    <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
-                    <span className="text-lg">Researching your query...</span>
-                  </div>
-                )}
-
-                {/* Answer Section */}
-                {!currentThread.isLoading && currentThread.response && (
-                  <div className="space-y-6">
-                    {/* Main Answer */}
-                    <div className="prose prose-lg prose-invert max-w-none">
-                      <div className="text-xs text-gray-500 uppercase tracking-wider mb-3">Answer</div>
-                      {currentThread.response?.synthesized?.markdown ? (
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {currentThread.response.synthesized.markdown}
-                        </ReactMarkdown>
-                      ) : (
-                        <div className="text-gray-300 leading-relaxed">
-                          {currentThread.response?.results?.map((result, i) => (
-                            <div key={i} className="mb-4">
-                              <ReactMarkdown remarkPlugins={[remarkGfm]}>{result.content}</ReactMarkdown>
-                            </div>
-                          ))}
+                {/* Messages */}
+                {(currentThread.messages || []).map((message, msgIndex) => (
+                  <div key={msgIndex} className="space-y-6">
+                    {/* User Query */}
+                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-6">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+                          <span className="text-white text-sm font-bold">Q</span>
                         </div>
-                      )}
+                        <div className="flex-1">
+                          <p className="text-white text-lg">{message.query}</p>
+                          <p className="text-xs text-gray-500 mt-2">{new Date(message.timestamp).toLocaleString()}</p>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Sources Section */}
-                    {currentThread.response?.results && currentThread.response.results.length > 0 && (
-                      <div className="pt-6 border-t border-white/10">
-                        <div className="text-xs text-gray-500 uppercase tracking-wider mb-3">Sources</div>
-                        <div className="grid gap-3">
-                          {currentThread.response.results.map((result, i) => (
-                            <div key={i} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-4 hover:bg-white/10 transition-all">
-                              <div className="flex items-start gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0">
-                                  <span className="text-white text-sm font-bold">{i + 1}</span>
+                    {/* Loading State */}
+                    {message.isLoading && (
+                      <div className="flex items-center gap-3 text-gray-400 py-6">
+                        <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
+                        <span className="text-lg">Researching your query...</span>
+                      </div>
+                    )}
+
+                    {/* Answer Section */}
+                    {!message.isLoading && message.response && (
+                      <div className="space-y-6">
+                        {/* Main Answer */}
+                        <div className="prose prose-lg prose-invert max-w-none">
+                          <div className="text-xs text-gray-500 uppercase tracking-wider mb-3">Answer</div>
+                          {message.response?.synthesized?.markdown ? (
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {message.response.synthesized.markdown}
+                            </ReactMarkdown>
+                          ) : (
+                            <div className="text-gray-300 leading-relaxed">
+                              {message.response?.results?.map((result, i) => (
+                                <div key={i} className="mb-4">
+                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{result.content}</ReactMarkdown>
                                 </div>
-                                <div className="flex-1">
-                                  <h4 className="font-semibold text-white text-sm mb-1">{result.agent_name}</h4>
-                                  <p className="text-xs text-gray-400">{result.purpose}</p>
-                                </div>
-                              </div>
+                              ))}
                             </div>
-                          ))}
+                          )}
                         </div>
                       </div>
                     )}
                   </div>
-                )}
+                ))}
               </div>
             )}
           </div>
