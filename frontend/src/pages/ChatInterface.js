@@ -382,25 +382,25 @@ export default function ChatInterface({ user }) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto pb-40">
-          <div className="max-w-4xl mx-auto px-6 py-4">
+        <main className="flex-1 overflow-y-auto">
+          <div className="max-w-4xl mx-auto px-6 py-4 min-h-[calc(100vh-200px)] flex flex-col justify-center">
             {!currentThread ? (
-              <div className="text-center py-12">
+              <div className="text-center">
                 <img 
                   src="https://customer-assets.emergentagent.com/job_smart-dispatch-7/artifacts/37zbur7o_Screenshot%202025-11-05%20at%2011.17.40%20PM.png"
                   alt="Sagent AI Logo"
-                  className="w-20 h-20 mx-auto mb-6 object-contain"
+                  className="w-16 h-16 mx-auto mb-4 object-contain"
                 />
-                <h2 className="text-4xl font-bold text-white mb-4">What can I help with?</h2>
-                <p className="text-gray-400 text-lg mb-8">Ask a question and let our specialized AI agents research it for you</p>
+                <h2 className="text-3xl font-bold text-white mb-3">What can I help with?</h2>
+                <p className="text-gray-400 mb-6">Ask a question and let our specialized AI agents research it for you</p>
                 
-                {/* Example Prompts */}
-                <div className="grid md:grid-cols-2 gap-4 max-w-3xl mx-auto">
+                {/* Example Prompts - Compact */}
+                <div className="grid md:grid-cols-2 gap-3 max-w-2xl mx-auto">
                   {examplePrompts.map((prompt, i) => (
                     <button
                       key={i}
                       onClick={() => setQuery(prompt)}
-                      className="text-left p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all group"
+                      className="text-left p-3 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all group"
                     >
                       <p className="text-sm text-gray-300 group-hover:text-white transition-colors">{prompt}</p>
                     </button>
