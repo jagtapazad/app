@@ -328,12 +328,16 @@ async def execute_chat_query(
     
     # Record analytics
     for agent_info in request.agent_chain:
-        agent = await db.agents.find_one({"id": agent_info["agent_id"]})
+        # Handle both formats: with agent_id or just agent_name
+        agent_id = agent_info.get("agent_id", agent_info.get("agent_name", "unknown"))
+        agent_name = agent_info.get("agent_name", "Unknown Agent")
+        
+        agent = await db.agents.find_one({"id": agent_id}) or await db.agents.find_one({"name": agent_name})
         if agent:
             analytics = AnalyticsEntry(
                 user_id=user_id,
-                agent_id=agent_info["agent_id"],
-                agent_name=agent_info["agent_name"],
+                agent_id=agent.get("id", agent_id),
+                agent_name=agent_name,
                 tokens_used=500,
                 cost=agent.get("cost_per_query", 0.01)
             )
