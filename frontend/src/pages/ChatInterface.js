@@ -19,12 +19,15 @@ export default function ChatInterface({ user }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isNewChatActive, setIsNewChatActive] = useState(false);
   const [loadingStage, setLoadingStage] = useState(0);
+  const [selectedAgents, setSelectedAgents] = useState([]);
   const chatEndRef = useRef(null);
 
-  const loadingMessages = [
+  const allAgents = ['Scira AI', 'GPT Researcher', 'Deerflow', 'Linkup.so', 'Abacus.ai', 'Octagon AI', 'Perplexity', 'Exa', 'AnswerThis.io', 'Parallel AI', 'Morphic', 'OpenAI Research', 'Nebius'];
+
+  const getLoadingMessages = (agents) => [
     { icon: '🔍', text: 'Analyzing your query...' },
     { icon: '🎯', text: 'Finding the right AI agents...' },
-    { icon: '🤖', text: 'Checking with Scira AI, Perplexity, Linkup, Exa...' },
+    { icon: '🤖', text: `Checking with ${agents.join(', ')}...`, showAgents: true },
     { icon: '⚡', text: 'Synthesizing the answer...' }
   ];
 
