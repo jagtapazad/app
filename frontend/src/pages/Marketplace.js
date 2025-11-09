@@ -187,7 +187,7 @@ export default function Marketplace({ user }) {
                 {/* Cost */}
                 <div className="text-sm">
                   <span className="text-gray-500">Cost per query: </span>
-                  <span className="text-white font-medium">${agent.cost_per_query.toFixed(2)}</span>
+                  <span className="text-white font-medium">${agent.cost_per_query.toFixed(3)}</span>
                 </div>
               </div>
             ))}
