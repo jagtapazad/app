@@ -167,7 +167,7 @@ export default function ChatInterface({ user }) {
 
                 {/* Loading State */}
                 {msg.isLoading && (
-                  <div className="flex items-center gap-3 text-gray-400">
+                  <div className="flex items-center gap-3 text-gray-400 ml-4">
                     <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500"></div>
                     <span>Processing your query...</span>
                   </div>
@@ -243,12 +243,6 @@ export default function ChatInterface({ user }) {
                 )}
               </div>
             ))
-          )}
-          {isExecuting && (
-            <div className="flex items-center gap-3 text-gray-400">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span>Processing your query...</span>
-            </div>
           )}
           <div ref={chatEndRef} />
         </div>
