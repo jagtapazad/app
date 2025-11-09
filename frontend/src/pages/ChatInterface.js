@@ -59,29 +59,47 @@ export default function ChatInterface({ user }) {
 
     setIsExecuting(true);
     const userQuery = query;
+    const currentAgentChain = agentChain.length > 0 ? agentChain : [{ agent_name: 'Processing...', purpose: 'Routing query' }];
+    
+    // Immediately show user query on screen
+    const pendingMessage = {
+      id: `temp-${Date.now()}`,
+      query: userQuery,
+      agent_chain: currentAgentChain,
+      response: null,
+      timestamp: new Date().toISOString(),
+      isLoading: true
+    };
+    
+    setMessages(prev => [...prev, pendingMessage]);
     setQuery('');
+    setAgentChain([]);
 
     try {
       const response = await executeChatQuery({
         query: userQuery,
-        agent_chain: agentChain,
+        agent_chain: currentAgentChain,
         fetch_ui: fetchUI,
         personalized
       });
 
-      const newMessage = {
-        query: userQuery,
-        agent_chain: agentChain,
-        response: response.data,
-        timestamp: new Date().toISOString()
-      };
-
-      setMessages(prev => [...prev, newMessage]);
-      setAgentChain([]);
+      // Update the pending message with actual response
+      setMessages(prev => prev.map(msg => 
+        msg.id === pendingMessage.id ? {
+          ...msg,
+          response: response.data,
+          agent_chain: response.data.agent_chain || currentAgentChain,
+          isLoading: false
+        } : msg
+      ));
+      
       toast.success('Query executed successfully!');
     } catch (error) {
       toast.error('Failed to execute query');
       console.error('Execution error:', error);
+      
+      // Remove pending message on error
+      setMessages(prev => prev.filter(msg => msg.id !== pendingMessage.id));
     } finally {
       setIsExecuting(false);
     }
