@@ -42,7 +42,22 @@ export default function ChatInterface({ user }) {
   const loadThreads = async () => {
     try {
       const response = await getChatHistory(50);
-      setThreads(response.data || []);
+      const history = response.data || [];
+      
+      // Convert old format to thread format with messages array
+      const convertedThreads = history.map(item => ({
+        id: item.id || `thread-${Date.now()}-${Math.random()}`,
+        messages: [{
+          query: item.query,
+          response: item.response,
+          timestamp: item.timestamp,
+          isLoading: false
+        }],
+        title: item.query,
+        timestamp: item.timestamp
+      }));
+      
+      setThreads(convertedThreads);
     } catch (error) {
       console.error('Failed to load threads:', error);
     }
