@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Sparkles, ArrowRight, CheckCircle2, Star, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { submitWaitlist } from '@/utils/api';
+import { submitWaitlist, getCurrentUser } from '@/utils/api';
 
 export default function Landing() {
   const [email, setEmail] = useState('');
@@ -12,6 +13,24 @@ export default function Landing() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const token = localStorage.getItem('session_token');
+    if (token) {
+      try {
+        const response = await getCurrentUser();
+        setUser(response.data);
+      } catch (error) {
+        console.error('Not authenticated');
+      }
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
