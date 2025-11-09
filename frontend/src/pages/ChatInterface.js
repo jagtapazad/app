@@ -298,14 +298,14 @@ export default function ChatInterface({ user }) {
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder={isNewChatActive ? "Ask anything..." : "Click 'New Chat' to start"}
+                placeholder="Ask anything..."
                 className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-gray-500 h-12 text-base focus:border-blue-500"
-                disabled={isExecuting || !isNewChatActive}
+                disabled={isExecuting}
                 data-testid="chat-input"
               />
               <Button
                 type="submit"
-                disabled={!query.trim() || isExecuting || !isNewChatActive}
+                disabled={!query.trim() || isExecuting}
                 className="h-12 px-6 bg-blue-500 hover:bg-blue-600 text-white"
                 data-testid="send-button"
               >
