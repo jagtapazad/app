@@ -278,13 +278,28 @@ export default function Landing() {
               intelligent AI routing?
             </span>
           </h2>
-          <Button
-            onClick={openWaitlist}
-            className="h-14 px-8 bg-white text-black hover:bg-gray-200 font-medium text-lg"
-          >
-            Join Waitlist
-            <ArrowRight className="ml-2 w-5 h-5" />
-          </Button>
+          
+          {/* Inline Email + Join Waitlist */}
+          <div className="mt-8 max-w-2xl mx-auto">
+            <div className="flex gap-3">
+              <Input
+                type="email"
+                placeholder="Enter your email..."
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="flex-1 bg-white/5 border-white/20 text-white placeholder:text-gray-500 h-14 text-base backdrop-blur-sm"
+                data-testid="inline-email-input"
+              />
+              <Button
+                onClick={openWaitlist}
+                className="h-14 px-8 bg-white text-black hover:bg-gray-200 font-medium text-lg whitespace-nowrap"
+                data-testid="open-waitlist-button"
+              >
+                Join Waitlist
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+            </div>
+          </div>
         </div>
       </main>
 
