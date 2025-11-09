@@ -103,7 +103,7 @@ function AppContent() {
       <Route path="/chat" element={<ChatInterface user={user || mockUser} />} />
       <Route path="/marketplace" element={<Marketplace user={user || mockUser} />} />
       <Route path="/my-agents" element={<MyAgents user={user || mockUser} />} />
-      <Route path="/analytics" element={<Analytics user={user || mockUser} />} />
+      <Route path="/pricing" element={<Pricing user={user || mockUser} />} />
     </Routes>
   );
 }
