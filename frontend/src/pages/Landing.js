@@ -373,7 +373,23 @@ export default function Landing() {
         <div className="mb-32">
           <h2 className="text-4xl font-bold text-center text-white mb-12">Trusted by Industry Leaders</h2>
           <div className="grid md:grid-cols-3 gap-8">
-            {/* Testimonial 1 */}
+            {/* Testimonial 1 - Phillip Kreger */}
+            <div className="p-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl">
+              <div className="flex gap-1 mb-4">
+                {[...Array(5)].map((_, idx) => (
+                  <Star key={idx} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                ))}
+              </div>
+              <p className="text-gray-300 mb-6 leading-relaxed">
+                "The ability to get comprehensive insights from multiple AI agents simultaneously is a game-changer. We've seen a 60% reduction in research time."
+              </p>
+              <div>
+                <div className="text-white font-medium">Phillip Kreger</div>
+                <div className="text-gray-500 text-sm">Assistant Professor, UC Berkeley</div>
+              </div>
+            </div>
+
+            {/* Testimonial 2 - Rajesh Kumar */}
             <div className="p-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl">
               <div className="flex gap-1 mb-4">
                 {[...Array(5)].map((_, idx) => (
@@ -389,23 +405,7 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* Testimonial 2 */}
-            <div className="p-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl">
-              <div className="flex gap-1 mb-4">
-                {[...Array(5)].map((_, idx) => (
-                  <Star key={idx} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                ))}
-              </div>
-              <p className="text-gray-300 mb-6 leading-relaxed">
-                "The ability to get comprehensive insights from multiple AI agents simultaneously is a game-changer. We've seen a 60% reduction in research time."
-              </p>
-              <div>
-                <div className="text-white font-medium">Priya Sharma</div>
-                <div className="text-gray-500 text-sm">Strategy, Zepto</div>
-              </div>
-            </div>
-
-            {/* Testimonial 3 */}
+            {/* Testimonial 3 - Arjun Patel */}
             <div className="p-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl">
               <div className="flex gap-1 mb-4">
                 {[...Array(5)].map((_, idx) => (
