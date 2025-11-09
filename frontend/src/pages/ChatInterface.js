@@ -171,7 +171,10 @@ export default function ChatInterface({ user }) {
     setSelectedAgents(randomAgents);
     
     const userQuery = query;
-    const currentAgentChain = agentChain.length > 0 ? agentChain : [{ agent_name: 'Perplexity', purpose: 'Answer query' }];
+    const currentAgentChain = agentChain.length > 0 ? agentChain : [{ 
+      agent_name: searchMode === 'quick' ? 'normal_search' : 'smart_router', 
+      purpose: 'Answer query' 
+    }];
     
     const loadingInterval = setInterval(() => {
       setLoadingStage(prev => (prev + 1) % 4);
