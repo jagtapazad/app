@@ -81,17 +81,28 @@ export default function Landing() {
           />
           <span className="text-2xl font-medium text-white">agent AI</span>
         </div>
-        <Button
-          variant="ghost"
-          className="text-white hover:bg-white/10 border border-white/20"
-          onClick={() => {
-            const redirectUrl = `${window.location.origin}/chat`;
-            window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
-          }}
-          data-testid="signin-button"
-        >
-          Sign In
-        </Button>
+        {user ? (
+          <Button
+            variant="ghost"
+            className="text-white hover:bg-white/10 border border-white/20"
+            onClick={() => navigate('/chat')}
+            data-testid="chat-button"
+          >
+            Chat
+          </Button>
+        ) : (
+          <Button
+            variant="ghost"
+            className="text-white hover:bg-white/10 border border-white/20"
+            onClick={() => {
+              const redirectUrl = `${window.location.origin}/chat`;
+              window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+            }}
+            data-testid="signin-button"
+          >
+            Sign In
+          </Button>
+        )}
       </header>
 
       {/* Hero Section */}
