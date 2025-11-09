@@ -164,11 +164,11 @@ export default function ChatInterface({ user }) {
                     )}
 
                     {/* UI Components (Graphs/Tables) */}
-                    {msg.response?.synthesized?.ui_components?.length > 0 && (
+                    {msg.response?.synthesized?.ui_components && Array.isArray(msg.response.synthesized.ui_components) && msg.response.synthesized.ui_components.length > 0 && (
                       <div className="mt-6 space-y-4">
                         {msg.response.synthesized.ui_components.map((component, i) => (
                           <div key={i}>
-                            {component.type === 'graph' && component.data && (
+                            {component.type === 'graph' && component.data && Array.isArray(component.data) && (
                               <div className="bg-black/30 p-4 rounded-xl">
                                 <ResponsiveContainer width="100%" height={300}>
                                   <LineChart data={component.data}>
@@ -182,7 +182,7 @@ export default function ChatInterface({ user }) {
                                 </ResponsiveContainer>
                               </div>
                             )}
-                            {component.type === 'table' && component.data && (
+                            {component.type === 'table' && component.data && Array.isArray(component.data) && component.data.length > 0 && (
                               <div className="overflow-x-auto">
                                 <table className="w-full text-sm text-left">
                                   <thead className="text-gray-400 border-b border-white/10">
