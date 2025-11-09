@@ -260,15 +260,13 @@ export default function Landing() {
               intelligent AI routing?
             </span>
           </h2>
-          {!submitted && (
-            <Button
-              onClick={() => document.querySelector('[data-testid="waitlist-form"]')?.scrollIntoView({ behavior: 'smooth' })}
-              className="h-14 px-8 bg-white text-black hover:bg-gray-200 font-medium text-lg"
-            >
-              Join Waitlist
-              <ArrowRight className="ml-2 w-5 h-5" />
-            </Button>
-          )}
+          <Button
+            onClick={openWaitlist}
+            className="h-14 px-8 bg-white text-black hover:bg-gray-200 font-medium text-lg"
+          >
+            Join Waitlist
+            <ArrowRight className="ml-2 w-5 h-5" />
+          </Button>
         </div>
       </main>
 
@@ -276,6 +274,65 @@ export default function Landing() {
       <footer className="relative z-10 py-12 px-6 text-center text-gray-600 text-sm border-t border-white/10">
         <p>&copy; 2025 Sagent AI. All rights reserved.</p>
       </footer>
+
+      {/* Waitlist Modal */}
+      <Dialog open={isWaitlistOpen} onOpenChange={setIsWaitlistOpen}>
+        <DialogContent className="bg-black/95 border border-white/20 backdrop-blur-xl max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-white">Join the Waitlist</DialogTitle>
+          </DialogHeader>
+          
+          {!submitted ? (
+            <form onSubmit={handleSubmit} className="space-y-6 mt-4" data-testid="waitlist-form">
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm text-gray-400 mb-2 block">Your Name</label>
+                  <Input
+                    type="text"
+                    placeholder="John Doe"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="bg-white/5 border-white/20 text-white placeholder:text-gray-500 h-12 text-base"
+                    data-testid="waitlist-name-input"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-400 mb-2 block">Email Address</label>
+                  <Input
+                    type="email"
+                    placeholder="john@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="bg-white/5 border-white/20 text-white placeholder:text-gray-500 h-12 text-base"
+                    data-testid="waitlist-email-input"
+                  />
+                </div>
+              </div>
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full h-12 bg-white text-black hover:bg-gray-200 font-medium"
+                data-testid="waitlist-submit-button"
+              >
+                {loading ? 'Joining...' : 'Join Waitlist'}
+                {!loading && <ArrowRight className="ml-2 w-4 h-4" />}
+              </Button>
+            </form>
+          ) : (
+            <div className="py-8" data-testid="waitlist-success">
+              <div className="flex flex-col items-center gap-4 text-center">
+                <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center">
+                  <CheckCircle2 className="w-8 h-8 text-green-400" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-white mb-2">You're on the list!</h3>
+                  <p className="text-gray-400">We'll notify you when Sagent AI launches.</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
