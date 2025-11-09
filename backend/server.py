@@ -275,11 +275,11 @@ async def preview_agent_chain(
 ):
     """Preview agent chain for a query (called as user types)"""
     user = await get_current_user(authorization, session_token)
-    user_id = user.id if user else None
+    user_id = user.id if user else "demo-user-123"
     
     # Get user's subscribed agents if authenticated
     subscribed_agents = []
-    if user_id:
+    if user:
         user_agents = await db.user_agents.find({"user_id": user_id}, {"_id": 0}).to_list(100)
         agent_ids = [ua["agent_id"] for ua in user_agents]
         subscribed_agents = await db.agents.find({"id": {"$in": agent_ids}}, {"_id": 0}).to_list(100)
@@ -288,7 +288,7 @@ async def preview_agent_chain(
     agent_chain = await orchestrator.decompose_query(
         query.query,
         subscribed_agents,
-        query.personalized and user_id is not None
+        query.personalized and user is not None
     )
     
     return {"agent_chain": agent_chain}
@@ -302,7 +302,13 @@ async def execute_chat_query(
     """Execute query with agent chain"""
     user = await get_current_user(authorization, session_token)
     if not user:
-        raise HTTPException(status_code=401, detail="Not authenticated")
+        # For development: allow without auth but don't save to history
+        result = await orchestrator.execute_agent_chain(
+            request.query,
+            request.agent_chain,
+            request.fetch_ui
+        )
+        return result
     
     # Execute agent chain
     result = await orchestrator.execute_agent_chain(
