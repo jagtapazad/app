@@ -95,34 +95,6 @@ export default function ChatInterface({ user }) {
     }
   };
 
-    try {
-      const response = await executeChatQuery({
-        query: userQuery,
-        agent_chain: currentAgentChain,
-        fetch_ui: fetchUI,
-        personalized
-      });
-
-      const updatedThread = {
-        ...newThread,
-        response: response.data,
-        agent_chain: response.data.agent_chain || currentAgentChain,
-        isLoading: false
-      };
-      
-      setCurrentThread(updatedThread);
-      setThreads(prev => prev.map(t => t.id === newThread.id ? updatedThread : t));
-      toast.success('Response received!');
-    } catch (error) {
-      toast.error('Failed to execute query');
-      console.error('Execution error:', error);
-      setThreads(prev => prev.filter(t => t.id !== newThread.id));
-      setCurrentThread(null);
-    } finally {
-      setIsExecuting(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-black flex">
       {/* Left Sidebar - Chat History */}
