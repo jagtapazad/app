@@ -56,8 +56,14 @@ export default function ChatInterface({ user }) {
     if (!query.trim() || isExecuting) return;
 
     setIsExecuting(true);
+    setLoadingStage(0);
     const userQuery = query;
     const currentAgentChain = agentChain.length > 0 ? agentChain : [{ agent_name: 'Perplexity', purpose: 'Answer query' }];
+    
+    // Cycle through loading messages
+    const loadingInterval = setInterval(() => {
+      setLoadingStage(prev => (prev + 1) % loadingMessages.length);
+    }, 3000);
     
     // Create new thread only if no current thread exists OR if New Chat was clicked
     if (!currentThread || isNewChatActive) {
@@ -102,6 +108,8 @@ export default function ChatInterface({ user }) {
         personalized
       });
 
+      clearInterval(loadingInterval);
+
       // Update the last message with response
       setCurrentThread(prev => {
         if (!prev) return prev;
@@ -134,10 +142,12 @@ export default function ChatInterface({ user }) {
       }));
       
     } catch (error) {
+      clearInterval(loadingInterval);
       toast.error('Failed to execute query');
       console.error('Execution error:', error);
     } finally {
       setIsExecuting(false);
+      setLoadingStage(0);
     }
   };
 
