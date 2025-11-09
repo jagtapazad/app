@@ -22,7 +22,7 @@ export default function ChatInterface({ user }) {
   const [selectedAgents, setSelectedAgents] = useState([]);
   const chatEndRef = useRef(null);
 
-  const allAgents = ['Scira AI', 'GPT Researcher', 'Deerflow', 'Linkup.so', 'Abacus.ai', 'Octagon AI', 'Perplexity', 'Exa', 'AnswerThis.io', 'Parallel AI', 'Morphic', 'OpenAI Research', 'Nebius'];
+  const allAgents = ['Scira AI', 'GPT Researcher', 'Deerflow', 'Linkup.so', 'Abacus.ai', 'Octagon AI', 'Perplexity', 'Exa', 'AnswerThis.io', 'Parallel AI', 'Morphic', 'OpenAI Research', 'Nebius', 'Clado.ai', 'Appoloi'];
 
   const getLoadingMessages = (agents) => [
     { icon: '🔍', text: 'Analyzing your query...' },
