@@ -353,7 +353,8 @@ async def execute_chat_query(
                     {"$inc": {"used_credits": agent.get("cost_per_query", 0.01)}}
                 )
     
-    return result
+    # Return result with thread_id so frontend can track it
+    return {**result, "thread_id": chat_message.thread_id}
 
 @api_router.get("/chat/history", response_model=List[ChatMessage])
 async def get_chat_history(
