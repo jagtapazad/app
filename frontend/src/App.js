@@ -100,8 +100,7 @@ function AppContent() {
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/chat" element={<ChatInterface user={user || mockUser} />} />
-      <Route path="/marketplace" element={<Marketplace user={user || mockUser} />} />
-      <Route path="/my-agents" element={<MyAgents user={user || mockUser} />} />
+      <Route path="/agents" element={<Marketplace user={user || mockUser} />} />
       <Route path="/pricing" element={<Pricing user={user || mockUser} />} />
     </Routes>
   );
