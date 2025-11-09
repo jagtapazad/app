@@ -326,17 +326,6 @@ export default function Landing() {
             <form onSubmit={handleSubmit} className="space-y-6 mt-4" data-testid="waitlist-form">
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm text-gray-400 mb-2 block">Your Name</label>
-                  <Input
-                    type="text"
-                    placeholder="John Doe"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="bg-white/5 border-white/20 text-white placeholder:text-gray-500 h-12 text-base"
-                    data-testid="waitlist-name-input"
-                  />
-                </div>
-                <div>
                   <label className="text-sm text-gray-400 mb-2 block">Email Address</label>
                   <Input
                     type="email"
@@ -345,6 +334,19 @@ export default function Landing() {
                     onChange={(e) => setEmail(e.target.value)}
                     className="bg-white/5 border-white/20 text-white placeholder:text-gray-500 h-12 text-base"
                     data-testid="waitlist-email-input"
+                    readOnly={email}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-400 mb-2 block">Your Name</label>
+                  <Input
+                    type="text"
+                    placeholder="John Doe"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="bg-white/5 border-white/20 text-white placeholder:text-gray-500 h-12 text-base"
+                    data-testid="waitlist-name-input"
+                    autoFocus
                   />
                 </div>
               </div>
