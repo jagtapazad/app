@@ -386,12 +386,12 @@ export default function Landing() {
               <div className="flex items-center gap-3">
                 <img 
                   src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=faces" 
-                  alt="Michael Chen"
+                  alt="Rajesh Kumar"
                   className="w-12 h-12 rounded-full object-cover"
                 />
                 <div>
-                  <div className="text-white font-medium">Michael Chen</div>
-                  <div className="text-gray-500 text-sm">Head of Research, TechCorp</div>
+                  <div className="text-white font-medium">Rajesh Kumar</div>
+                  <div className="text-gray-500 text-sm">VP of Product, Meesho</div>
                 </div>
               </div>
             </div>
@@ -409,12 +409,12 @@ export default function Landing() {
               <div className="flex items-center gap-3">
                 <img 
                   src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=faces" 
-                  alt="Sarah Johnson"
+                  alt="Priya Sharma"
                   className="w-12 h-12 rounded-full object-cover"
                 />
                 <div>
-                  <div className="text-white font-medium">Sarah Johnson</div>
-                  <div className="text-gray-500 text-sm">VP of Strategy, InnovateLabs</div>
+                  <div className="text-white font-medium">Priya Sharma</div>
+                  <div className="text-gray-500 text-sm">Head of Strategy, Zepto</div>
                 </div>
               </div>
             </div>
@@ -432,12 +432,12 @@ export default function Landing() {
               <div className="flex items-center gap-3">
                 <img 
                   src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces" 
-                  alt="David Park"
+                  alt="Arjun Patel"
                   className="w-12 h-12 rounded-full object-cover"
                 />
                 <div>
-                  <div className="text-white font-medium">David Park</div>
-                  <div className="text-gray-500 text-sm">CTO, DataFusion Inc</div>
+                  <div className="text-white font-medium">Arjun Patel</div>
+                  <div className="text-gray-500 text-sm">Director of Analytics, Walmart</div>
                 </div>
               </div>
             </div>
