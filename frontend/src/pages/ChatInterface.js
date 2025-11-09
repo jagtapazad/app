@@ -17,6 +17,7 @@ export default function ChatInterface({ user }) {
   const [threads, setThreads] = useState([]);
   const [currentThread, setCurrentThread] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isNewChatActive, setIsNewChatActive] = useState(false);
   const chatEndRef = useRef(null);
 
   useEffect(() => {
@@ -39,6 +40,7 @@ export default function ChatInterface({ user }) {
   const createNewThread = () => {
     setCurrentThread(null);
     setQuery('');
+    setIsNewChatActive(true);
   };
 
   const handleSubmit = async (e) => {
