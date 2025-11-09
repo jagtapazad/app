@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Sparkles, Plus, MessageSquare, Clock, Copy, RotateCcw, ChevronRight, Search, X } from 'lucide-react';
+import { Send, Sparkles, Plus, MessageSquare, Clock, Copy, RotateCcw, ChevronRight, Search, X, Trash2, Edit2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
