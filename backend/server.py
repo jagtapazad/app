@@ -156,7 +156,13 @@ async def process_session(x_session_id: str = Header(...)):
         
         await db.user_sessions.insert_one(session_dict)
         
-        return SessionDataResponse(**data, session_token=session_token)
+        return SessionDataResponse(
+            id=data["id"],
+            email=data["email"],
+            name=data["name"],
+            picture=data.get("picture", ""),
+            session_token=session_token
+        )
     
     except requests.RequestException as e:
         logger.error(f"Error calling auth service: {e}")
