@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { getAllAgents, getSubscribedAgents, subscribeAgent, unsubscribeAgent } from '@/utils/api';
+import axios from 'axios';
 
 export default function Marketplace({ user }) {
   const [agents, setAgents] = useState([]);
