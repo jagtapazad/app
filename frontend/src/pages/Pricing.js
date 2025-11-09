@@ -84,7 +84,7 @@ export default function Pricing({ user }) {
         ) : (
           <div className="space-y-8">
             {/* Stats Overview */}
-            <div className="grid md:grid-cols-4 gap-6">
+            <div className="grid md:grid-cols-3 gap-6">
               <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
                 <div className="flex items-center gap-3 mb-2">
                   <Activity className="w-5 h-5 text-blue-400" />
@@ -99,17 +99,8 @@ export default function Pricing({ user }) {
                   <DollarSign className="w-5 h-5 text-green-400" />
                   <span className="text-gray-400 text-sm">Total Cost</span>
                 </div>
-                <div className="text-3xl font-bold text-white">${(analytics?.total_cost || 0).toFixed(2)}</div>
+                <div className="text-3xl font-bold text-white">${(analytics?.total_cost || 0).toFixed(3)}</div>
                 <div className="text-sm text-gray-500 mt-1">All time</div>
-              </div>
-
-              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
-                <div className="flex items-center gap-3 mb-2">
-                  <Zap className="w-5 h-5 text-yellow-400" />
-                  <span className="text-gray-400 text-sm">Credits Used</span>
-                </div>
-                <div className="text-3xl font-bold text-white">${(analytics?.credits?.used_credits || 0).toFixed(2)}</div>
-                <div className="text-sm text-gray-500 mt-1">of ${(analytics?.credits?.total_credits || 0).toFixed(2)}</div>
               </div>
 
               <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
@@ -118,7 +109,7 @@ export default function Pricing({ user }) {
                   <span className="text-gray-400 text-sm">Avg Cost/Query</span>
                 </div>
                 <div className="text-3xl font-bold text-white">
-                  ${analytics?.total_queries > 0 ? ((analytics?.total_cost || 0) / analytics.total_queries).toFixed(3) : '0.000'}
+                  ${analytics?.total_queries > 0 ? ((analytics?.total_cost || 0) / analytics.total_queries).toFixed(4) : '0.0000'}
                 </div>
                 <div className="text-sm text-gray-500 mt-1">Per query</div>
               </div>
