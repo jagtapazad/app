@@ -243,17 +243,13 @@ export default function ChatInterface({ user }) {
 
                 {/* Messages */}
                 {(currentThread.messages || []).map((message, msgIndex) => (
-                  <div key={msgIndex} className="space-y-6">
-                    {/* User Query */}
-                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-6">
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0">
-                          <span className="text-white text-sm font-bold">Q</span>
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-white text-lg">{message.query}</p>
-                          <p className="text-xs text-gray-500 mt-2">{new Date(message.timestamp).toLocaleString()}</p>
-                        </div>
+                  <div key={msgIndex} className="space-y-4">
+                    {/* User Query - Simple heading like Perplexity */}
+                    <div>
+                      <h2 className="text-3xl font-bold text-white mb-2">{message.query}</h2>
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <Clock className="w-4 h-4" />
+                        <span>{new Date(message.timestamp).toLocaleString()}</span>
                       </div>
                     </div>
 
@@ -268,7 +264,6 @@ export default function ChatInterface({ user }) {
                     {/* Answer Section */}
                     {!message.isLoading && message.response && (
                       <div className="space-y-6">
-                        {/* Main Answer */}
                         <div className="prose prose-lg prose-invert max-w-none">
                           <div className="text-xs text-gray-500 uppercase tracking-wider mb-3">Answer</div>
                           {message.response?.synthesized?.markdown ? (
