@@ -24,8 +24,24 @@ function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // DEVELOPMENT MODE: Mock user for testing without auth
+  const DEV_MODE = true;
+  const mockUser = {
+    id: 'demo-user-123',
+    name: 'Demo User',
+    email: 'demo@sagent.ai',
+    picture: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=faces'
+  };
+
   useEffect(() => {
     const initAuth = async () => {
+      // Development mode: Skip auth and use mock user
+      if (DEV_MODE) {
+        setUser(mockUser);
+        setLoading(false);
+        return;
+      }
+
       // Check for session_id in URL fragment
       const hash = window.location.hash;
       if (hash && hash.includes('session_id=')) {
@@ -82,18 +98,10 @@ function AppContent() {
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
-      <Route path="/chat" element={
-        user ? <ChatInterface user={user} /> : <Navigate to="/" replace />
-      } />
-      <Route path="/marketplace" element={
-        user ? <Marketplace user={user} /> : <Navigate to="/" replace />
-      } />
-      <Route path="/my-agents" element={
-        user ? <MyAgents user={user} /> : <Navigate to="/" replace />
-      } />
-      <Route path="/analytics" element={
-        user ? <Analytics user={user} /> : <Navigate to="/" replace />
-      } />
+      <Route path="/chat" element={<ChatInterface user={user || mockUser} />} />
+      <Route path="/marketplace" element={<Marketplace user={user || mockUser} />} />
+      <Route path="/my-agents" element={<MyAgents user={user || mockUser} />} />
+      <Route path="/analytics" element={<Analytics user={user || mockUser} />} />
     </Routes>
   );
 }
