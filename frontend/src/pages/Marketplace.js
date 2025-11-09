@@ -22,9 +22,14 @@ export default function Marketplace({ user }) {
 
   const loadAgents = async () => {
     try {
-      const response = await getAllAgents();
+      // Use public endpoint in dev mode
+      const response = await getAllAgents().catch(() => {
+        // Fallback to axios direct call for public endpoint
+        return window.axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/agents/public`);
+      });
       setAgents(response.data || []);
     } catch (error) {
+      console.error('Agent load error:', error);
       toast.error('Failed to load agents');
     } finally {
       setLoading(false);
