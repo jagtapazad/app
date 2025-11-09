@@ -163,6 +163,42 @@ export default function Landing() {
             Sagent AI intelligently routes your queries to specialized agents,
             delivering comprehensive results beyond what any single AI can provide.
           </p>
+
+          {/* Top Join Waitlist - Shows email input on click */}
+          <div className="mt-12">
+            {!showTopEmailInput ? (
+              <Button
+                onClick={() => setShowTopEmailInput(true)}
+                className="h-14 px-8 bg-white text-black hover:bg-gray-200 font-medium text-lg"
+                data-testid="top-join-waitlist-button"
+              >
+                Join Waitlist
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+            ) : (
+              <div className="max-w-md mx-auto space-y-3">
+                <div className="flex gap-3">
+                  <Input
+                    type="email"
+                    placeholder="Enter your email..."
+                    value={topEmail}
+                    onChange={(e) => setTopEmail(e.target.value)}
+                    className="flex-1 bg-white/5 border-white/20 text-white placeholder:text-gray-500 h-14 text-base backdrop-blur-sm"
+                    data-testid="top-email-input"
+                    autoFocus
+                  />
+                  <Button
+                    onClick={handleTopWaitlistSubmit}
+                    disabled={loading || !topEmail}
+                    className="h-14 px-6 bg-white text-black hover:bg-gray-200 font-medium"
+                    data-testid="top-go-button"
+                  >
+                    {loading ? 'Joining...' : 'Go'}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Integrated Agents Section */}
