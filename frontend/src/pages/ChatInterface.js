@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Sparkles, Plus, MessageSquare, Trash2, Edit2, MoreVertical, Clock } from 'lucide-react';
+import { Send, Sparkles, Plus, MessageSquare, Clock, Copy, RotateCcw, ChevronRight, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { previewAgentChain, executeChatQuery, getChatHistory } from '@/utils/api';
+import { previewAgentChain, executeChatQuery, getChatHistory, editMessageSection } from '@/utils/api';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 export default function ChatInterface({ user }) {
   const [query, setQuery] = useState('');
   const [agentChain, setAgentChain] = useState([]);
-  const [fetchUI, setFetchUI] = useState(true);
   const [personalized, setPersonalized] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
   const [threads, setThreads] = useState([]);
@@ -20,9 +20,18 @@ export default function ChatInterface({ user }) {
   const [isNewChatActive, setIsNewChatActive] = useState(false);
   const [loadingStage, setLoadingStage] = useState(0);
   const [selectedAgents, setSelectedAgents] = useState([]);
+  const [contextMenu, setContextMenu] = useState(null);
+  const [searchHistory, setSearchHistory] = useState('');
   const chatEndRef = useRef(null);
 
   const allAgents = ['Scira AI', 'GPT Researcher', 'Deerflow', 'Linkup.so', 'Abacus.ai', 'Octagon AI', 'Perplexity', 'Exa', 'AnswerThis.io', 'Parallel AI', 'Morphic', 'OpenAI Research', 'Nebius', 'Clado.ai', 'Appoloi'];
+
+  const examplePrompts = [
+    "Find recent market research on AI agents",
+    "Who are the top researchers in quantum computing?",
+    "Analyze the competitive landscape of SaaS companies",
+    "What are the latest developments in renewable energy?"
+  ];
 
   const getLoadingMessages = (agents) => [
     { icon: '🔍', text: 'Analyzing your query...' },
@@ -39,12 +48,28 @@ export default function ChatInterface({ user }) {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [currentThread]);
 
+  // Preview agent chain as user types (debounced)
+  useEffect(() => {
+    if (query.trim().length > 15) {
+      const debounce = setTimeout(async () => {
+        try {
+          const response = await previewAgentChain({ query, personalized });
+          setAgentChain(response.data.agent_chain || []);
+        } catch (error) {
+          console.error('Preview error:', error);
+        }
+      }, 800);
+      return () => clearTimeout(debounce);
+    } else {
+      setAgentChain([]);
+    }
+  }, [query, personalized]);
+
   const loadThreads = async () => {
     try {
       const response = await getChatHistory(50);
       const history = response.data || [];
       
-      // Group messages by thread_id
       const threadMap = {};
       
       history.forEach(item => {
@@ -58,6 +83,7 @@ export default function ChatInterface({ user }) {
           };
         }
         threadMap[threadId].messages.push({
+          id: item.id,
           query: item.query,
           response: item.response,
           timestamp: item.timestamp,
@@ -65,7 +91,6 @@ export default function ChatInterface({ user }) {
         });
       });
       
-      // Convert to array and sort by timestamp
       const threadsArray = Object.values(threadMap).sort((a, b) => 
         new Date(b.timestamp) - new Date(a.timestamp)
       );
@@ -89,7 +114,6 @@ export default function ChatInterface({ user }) {
     setIsExecuting(true);
     setLoadingStage(0);
     
-    // Randomly select 3 agents for this query
     const shuffled = [...allAgents].sort(() => 0.5 - Math.random());
     const randomAgents = shuffled.slice(0, 3);
     setSelectedAgents(randomAgents);
@@ -97,12 +121,10 @@ export default function ChatInterface({ user }) {
     const userQuery = query;
     const currentAgentChain = agentChain.length > 0 ? agentChain : [{ agent_name: 'Perplexity', purpose: 'Answer query' }];
     
-    // Cycle through loading messages faster (1.5 seconds each)
     const loadingInterval = setInterval(() => {
       setLoadingStage(prev => (prev + 1) % 4);
     }, 1500);
     
-    // Create new thread only if no current thread exists OR if New Chat was clicked
     if (!currentThread || isNewChatActive) {
       const newThread = {
         id: `thread-${Date.now()}`,
@@ -120,7 +142,6 @@ export default function ChatInterface({ user }) {
       setThreads(prev => [newThread, ...prev]);
       setIsNewChatActive(false);
     } else {
-      // Add to existing thread (follow-up)
       const updatedThread = {
         ...currentThread,
         messages: [...(currentThread.messages || []), {
@@ -142,16 +163,14 @@ export default function ChatInterface({ user }) {
         query: userQuery,
         thread_id: currentThread?.id || null,
         agent_chain: currentAgentChain,
-        fetch_ui: fetchUI,
+        fetch_ui: true,
         personalized
       });
 
       clearInterval(loadingInterval);
 
-      // Get the thread_id from response (backend confirms which thread it saved to)
       const savedThreadId = response.data.thread_id || currentThread?.id || `thread-${Date.now()}`;
 
-      // Update the last message with response
       setCurrentThread(prev => {
         if (!prev) return prev;
         const updatedMessages = [...(prev.messages || [])];
@@ -192,11 +211,46 @@ export default function ChatInterface({ user }) {
     }
   };
 
+  const handleContextMenu = (e, messageId, sectionId) => {
+    e.preventDefault();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      messageId,
+      sectionId
+    });
+  };
+
+  const handleEditOperation = async (operation, instruction = '') => {
+    if (!contextMenu) return;
+    
+    try {
+      await editMessageSection({
+        message_id: contextMenu.messageId,
+        section_id: contextMenu.sectionId,
+        operation,
+        instruction
+      });
+      toast.success(`${operation.charAt(0).toUpperCase() + operation.slice(1)} operation applied`);
+      setContextMenu(null);
+    } catch (error) {
+      toast.error('Failed to apply edit');
+    }
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard');
+  };
+
+  const filteredThreads = threads.filter(t => 
+    t.title?.toLowerCase().includes(searchHistory.toLowerCase())
+  );
+
   return (
-    <div className="min-h-screen bg-black flex">
-      {/* Left Sidebar - Chat History */}
+    <div className="min-h-screen bg-black flex" onClick={() => setContextMenu(null)}>
+      {/* Left Sidebar */}
       <aside className={`${sidebarOpen ? 'w-72' : 'w-0'} border-r border-white/10 bg-black/50 backdrop-blur-sm transition-all duration-300 overflow-hidden flex flex-col`}>
-        {/* Sidebar Header */}
         <div className="p-4 border-b border-white/10">
           <div className="flex items-center gap-3 mb-4">
             <img 
@@ -208,32 +262,42 @@ export default function ChatInterface({ user }) {
           </div>
           <Button
             onClick={createNewThread}
-            className="w-full bg-white text-black hover:bg-gray-200 h-10"
+            className="w-full bg-white text-black hover:bg-gray-200 h-10 mb-3"
             data-testid="new-chat-button"
           >
             <Plus className="w-4 h-4 mr-2" />
             New Chat
           </Button>
+          
+          {/* Search History */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
+            <Input
+              placeholder="Search conversations..."
+              value={searchHistory}
+              onChange={(e) => setSearchHistory(e.target.value)}
+              className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-gray-500 h-9 text-sm"
+            />
+          </div>
         </div>
 
-        {/* Thread List */}
         <div className="flex-1 overflow-y-auto p-2">
           <div className="space-y-1">
-            {threads.map((thread) => (
+            {filteredThreads.map((thread) => (
               <button
                 key={thread.id}
                 onClick={() => setCurrentThread(thread)}
                 className={`w-full text-left p-3 rounded-lg hover:bg-white/5 transition-colors ${
-                  currentThread?.id === thread.id ? 'bg-white/10' : ''
+                  currentThread?.id === thread.id ? 'bg-white/10 border border-white/20' : ''
                 }`}
                 data-testid={`thread-${thread.id}`}
               >
                 <div className="flex items-start gap-2">
                   <MessageSquare className="w-4 h-4 text-gray-400 mt-1 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-white truncate">{thread.title || thread.messages?.[0]?.query || thread.query || 'Untitled'}</p>
+                    <p className="text-sm text-white truncate font-medium">{thread.title || thread.messages?.[0]?.query || thread.query || 'Untitled'}</p>
                     <p className="text-xs text-gray-500 mt-1">
-                      {new Date(thread.timestamp).toLocaleDateString()}
+                      {new Date(thread.timestamp).toLocaleDateString()} · {thread.messages?.length || 1} msg
                     </p>
                   </div>
                 </div>
@@ -242,7 +306,6 @@ export default function ChatInterface({ user }) {
           </div>
         </div>
 
-        {/* Sidebar Footer */}
         <div className="p-4 border-t border-white/10">
           <div className="flex items-center gap-4 text-sm">
             <a href="/agents" className="text-gray-400 hover:text-white transition-colors">Agents</a>
@@ -251,9 +314,8 @@ export default function ChatInterface({ user }) {
         </div>
       </aside>
 
-      {/* Main Content Area */}
+      {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        {/* Top Header */}
         <header className="border-b border-white/10 bg-black/50 backdrop-blur-sm">
           <div className="px-6 py-4 flex justify-between items-center">
             <div className="flex items-center gap-4">
@@ -278,23 +340,31 @@ export default function ChatInterface({ user }) {
           </div>
         </header>
 
-        {/* Content Area */}
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-4xl mx-auto px-6 py-8">
             {!currentThread ? (
-              /* Empty State */
-              <div className="text-center py-32">
+              <div className="text-center py-20">
                 <Sparkles className="w-20 h-20 text-blue-400 mx-auto mb-6" />
                 <h2 className="text-4xl font-bold text-white mb-4">What can I help with?</h2>
-                <p className="text-gray-400 text-lg">Click "New Chat" to start a conversation</p>
+                <p className="text-gray-400 text-lg mb-12">Ask a question and let our specialized AI agents research it for you</p>
+                
+                {/* Example Prompts */}
+                <div className="grid md:grid-cols-2 gap-4 max-w-3xl mx-auto">
+                  {examplePrompts.map((prompt, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setQuery(prompt)}
+                      className="text-left p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all group"
+                    >
+                      <p className="text-sm text-gray-300 group-hover:text-white transition-colors">{prompt}</p>
+                    </button>
+                  ))}
+                </div>
               </div>
             ) : (
-              /* Thread Display - ChatGPT/Perplexity Style with Messages */
               <div className="space-y-8">
-                {/* Messages */}
                 {(currentThread.messages || []).map((message, msgIndex) => (
                   <div key={msgIndex} className="space-y-4">
-                    {/* User Query - Simple heading like Perplexity */}
                     <div>
                       <h2 className="text-3xl font-bold text-white mb-2">{message.query}</h2>
                       <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -303,18 +373,16 @@ export default function ChatInterface({ user }) {
                       </div>
                     </div>
 
-                    {/* Loading State with progressive messages */}
                     {message.isLoading && (
                       <div className="space-y-4 py-6">
                         <div className="flex items-center gap-3 text-gray-400">
                           <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
                           <span className="text-lg">{getLoadingMessages(selectedAgents)[loadingStage].text}</span>
                         </div>
-                        {/* Show agent badges when checking with agents */}
                         {loadingStage === 2 && (
                           <div className="flex gap-2 flex-wrap ml-9">
                             {selectedAgents.map(agent => (
-                              <span key={agent} className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-lg text-xs text-blue-300">
+                              <span key={agent} className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-lg text-sm text-blue-300 animate-pulse">
                                 {agent}
                               </span>
                             ))}
@@ -323,11 +391,25 @@ export default function ChatInterface({ user }) {
                       </div>
                     )}
 
-                    {/* Answer Section */}
                     {!message.isLoading && message.response && (
                       <div className="space-y-6">
-                        <div className="prose prose-lg prose-invert max-w-none">
-                          <div className="text-xs text-gray-500 uppercase tracking-wider mb-3">Answer</div>
+                        <div 
+                          className="prose prose-lg prose-invert max-w-none"
+                          onContextMenu={(e) => handleContextMenu(e, message.id, 'answer')}
+                        >
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="text-xs text-gray-500 uppercase tracking-wider">Answer</div>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => copyToClipboard(message.response?.synthesized?.markdown || '')}
+                                className="text-gray-400 hover:text-white h-7"
+                              >
+                                <Copy className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          </div>
                           {message.response?.synthesized?.markdown ? (
                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                               {message.response.synthesized.markdown}
@@ -342,10 +424,27 @@ export default function ChatInterface({ user }) {
                             </div>
                           )}
                         </div>
+
+                        {/* Suggested Follow-ups */}
+                        {msgIndex === (currentThread.messages?.length || 0) - 1 && (
+                          <div className="flex gap-2 flex-wrap">
+                            <span className="text-xs text-gray-500">Suggested:</span>
+                            {['Tell me more', 'Give examples', 'Explain in detail'].map(suggestion => (
+                              <button
+                                key={suggestion}
+                                onClick={() => setQuery(suggestion)}
+                                className="text-xs px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
+                              >
+                                {suggestion}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
                 ))}
+                <div ref={chatEndRef} />
               </div>
             )}
           </div>
@@ -354,15 +453,38 @@ export default function ChatInterface({ user }) {
         {/* Fixed Input Area */}
         <div className="border-t border-white/10 bg-black/80 backdrop-blur-xl">
           <div className="max-w-4xl mx-auto px-6 py-6">
-            {/* Agent Chain Preview */}
+            {/* Agent Chain Flow - Visual Preview */}
             {agentChain.length > 0 && (
-              <div className="mb-3 flex gap-2 flex-wrap">
-                <span className="text-xs text-gray-500">Routing to:</span>
-                {agentChain.map((agent, i) => (
-                  <span key={i} className="text-xs px-2 py-1 bg-blue-500/20 text-blue-300 rounded-md">
-                    {agent.agent_name}
-                  </span>
-                ))}
+              <div className="mb-4 p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl">
+                <div className="text-xs text-gray-400 mb-3 flex items-center gap-2">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Agent Routing</span>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {agentChain.map((agent, i) => (
+                    <React.Fragment key={i}>
+                      <div className="flex items-center gap-2 bg-blue-500/20 border border-blue-500/30 rounded-lg px-3 py-2">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center">
+                          <span className="text-xs text-white font-bold">{i + 1}</span>
+                        </div>
+                        <Select defaultValue={agent.agent_name}>
+                          <SelectTrigger className="h-7 border-0 bg-transparent text-blue-300 text-sm font-medium w-auto">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {allAgents.map(a => (
+                              <SelectItem key={a} value={a}>{a}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {i < agentChain.length - 1 && (
+                        <ChevronRight className="w-4 h-4 text-blue-400" />
+                      )}
+                    </React.Fragment>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-3 italic">{agentChain[0]?.purpose}</p>
               </div>
             )}
 
@@ -396,6 +518,37 @@ export default function ChatInterface({ user }) {
           </div>
         </div>
       </div>
+
+      {/* Context Menu for Edit Operations */}
+      {contextMenu && (
+        <div
+          className="fixed z-50 bg-black/95 backdrop-blur-xl border border-white/20 rounded-xl shadow-2xl overflow-hidden"
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={() => handleEditOperation('iterate', prompt('Enter your instruction:'))}
+            className="w-full px-4 py-3 text-left text-sm text-white hover:bg-white/10 transition-colors flex items-center gap-3"
+          >
+            <Edit2 className="w-4 h-4" />
+            <span>Iterate</span>
+          </button>
+          <button
+            onClick={() => handleEditOperation('delete')}
+            className="w-full px-4 py-3 text-left text-sm text-white hover:bg-white/10 transition-colors flex items-center gap-3"
+          >
+            <X className="w-4 h-4" />
+            <span>Delete</span>
+          </button>
+          <button
+            onClick={() => handleEditOperation('dissolve')}
+            className="w-full px-4 py-3 text-left text-sm text-white hover:bg-white/10 transition-colors flex items-center gap-3"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Dissolve</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
