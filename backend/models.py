@@ -73,6 +73,7 @@ class ChatMessage(BaseModel):
     
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str
+    thread_id: str
     query: str
     agent_chain: List[Dict[str, Any]]
     response: Dict[str, Any]
@@ -82,6 +83,7 @@ class ChatMessage(BaseModel):
 
 class ChatExecuteRequest(BaseModel):
     query: str
+    thread_id: Optional[str] = None
     agent_chain: List[Dict[str, Any]]
     fetch_ui: bool = False
     personalized: bool = False
