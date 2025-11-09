@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Mail, Sparkles, Network, Zap, CheckCircle2 } from 'lucide-react';
+import { Sparkles, ArrowRight, CheckCircle2, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -32,22 +31,37 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0f] via-[#0f1729] to-[#0a0a0f] relative overflow-hidden">
+    <div className="min-h-screen bg-black relative overflow-hidden">
+      {/* Animated glowing background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-orange-600/20 rounded-full blur-[150px] animate-pulse" />
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px]" />
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-purple-600/5 rounded-full blur-[180px]" />
       </div>
 
+      {/* Header */}
       <header className="relative z-10 px-6 py-6 flex justify-between items-center max-w-7xl mx-auto">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-200 to-gray-500 flex items-center justify-center shadow-lg">
-            <span className="text-2xl font-bold text-black">S</span>
+          {/* Logo - Using the provided gradient swirl S */}
+          <div className="relative w-12 h-12">
+            <svg viewBox="0 0 100 100" className="w-full h-full">
+              <defs>
+                <radialGradient id="logoGradient" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
+                  <stop offset="50%" stopColor="#a0a0a0" stopOpacity="1" />
+                  <stop offset="100%" stopColor="#000000" stopOpacity="1" />
+                </radialGradient>
+              </defs>
+              {/* Swirling S shape */}
+              <path d="M20,20 Q30,10 50,30 Q70,50 80,40 L80,60 Q70,70 50,50 Q30,30 20,40 Z" fill="url(#logoGradient)" />
+              <path d="M80,80 Q70,90 50,70 Q30,50 20,60 L20,40 Q30,30 50,50 Q70,70 80,60 Z" fill="url(#logoGradient)" opacity="0.8" />
+            </svg>
           </div>
-          <span className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">agent AI</span>
+          <span className="text-2xl font-medium text-white">agent AI</span>
         </div>
         <Button
           variant="ghost"
-          className="glass text-white hover:bg-white/10"
+          className="text-white hover:bg-white/10 border border-white/20"
           onClick={() => {
             const redirectUrl = `${window.location.origin}/chat`;
             window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
@@ -58,37 +72,33 @@ export default function Landing() {
         </Button>
       </header>
 
-      <main className="relative z-10 max-w-7xl mx-auto px-6 py-20">
-        <div className="text-center space-y-8">
-          <div className="inline-flex items-center gap-2 glass px-4 py-2 rounded-full">
-            <Sparkles className="w-4 h-4 text-blue-400" />
-            <span className="text-sm text-gray-300">AI-Powered Agent Orchestration</span>
-          </div>
-
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight">
-            <span className="bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
-              Smarter Research.
-            </span>
+      {/* Hero Section */}
+      <main className="relative z-10 max-w-6xl mx-auto px-6 py-20">
+        {/* Hero Content */}
+        <div className="text-center space-y-8 mb-32">
+          <h1 className="text-6xl sm:text-7xl lg:text-8xl font-bold leading-tight text-white">
+            Let the Right AI
             <br />
-            <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent">
-              Better Results.
+            <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              Handle Your Task.
             </span>
           </h1>
 
-          <p className="text-lg sm:text-xl text-gray-400 max-w-3xl mx-auto">
-            Sagent AI orchestrates specialized AI agents to deliver comprehensive,
-            multi-dimensional research beyond what any single AI can provide.
+          <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
+            Sagent AI intelligently routes your queries to specialized agents,
+            delivering comprehensive results beyond what any single AI can provide.
           </p>
 
+          {/* Waitlist Form or Success */}
           {!submitted ? (
-            <form onSubmit={handleSubmit} className="max-w-xl mx-auto mt-12" data-testid="waitlist-form">
-              <div className="glass-strong rounded-2xl p-8 space-y-4">
+            <form onSubmit={handleSubmit} className="max-w-md mx-auto mt-12" data-testid="waitlist-form">
+              <div className="space-y-4">
                 <Input
                   type="text"
                   placeholder="Your name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 h-12"
+                  className="bg-white/5 border-white/20 text-white placeholder:text-gray-500 h-14 text-lg backdrop-blur-sm"
                   data-testid="waitlist-name-input"
                 />
                 <Input
@@ -96,65 +106,151 @@ export default function Landing() {
                   placeholder="your@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 h-12"
+                  className="bg-white/5 border-white/20 text-white placeholder:text-gray-500 h-14 text-lg backdrop-blur-sm"
                   data-testid="waitlist-email-input"
                 />
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-12 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-medium rounded-xl"
+                  className="w-full h-14 bg-white text-black hover:bg-gray-200 font-medium text-lg"
                   data-testid="waitlist-submit-button"
                 >
                   {loading ? 'Joining...' : 'Join Waitlist'}
-                  {!loading && <Sparkles className="ml-2 w-4 h-4" />}
+                  {!loading && <ArrowRight className="ml-2 w-5 h-5" />}
                 </Button>
               </div>
             </form>
           ) : (
-            <div className="max-w-xl mx-auto mt-12 glass-strong rounded-2xl p-8" data-testid="waitlist-success">
-              <div className="flex items-center justify-center gap-3 text-green-400">
-                <CheckCircle2 className="w-6 h-6" />
-                <span className="text-lg font-medium">You're on the list!</span>
+            <div className="max-w-md mx-auto mt-12 p-8 bg-white/5 backdrop-blur-sm border border-white/20 rounded-2xl" data-testid="waitlist-success">
+              <div className="flex items-center justify-center gap-3 text-green-400 mb-4">
+                <CheckCircle2 className="w-8 h-8" />
+                <span className="text-2xl font-medium">You're on the list!</span>
               </div>
-              <p className="text-gray-400 mt-4">We'll notify you when we're ready to launch.</p>
+              <p className="text-gray-400 text-center">We'll notify you when Sagent AI launches.</p>
             </div>
           )}
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 mt-32">
-          <div className="glass rounded-2xl p-8 space-y-4 hover:bg-white/10 transition-all">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-              <Network className="w-6 h-6 text-white" />
+        {/* Integrated Agents Section */}
+        <div className="text-center mb-20">
+          <p className="text-gray-500 text-sm uppercase tracking-wider mb-8">Integrated with 30+ AI Agents</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
+            <div className="p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl">
+              <div className="text-4xl font-bold text-white mb-2">30+</div>
+              <div className="text-sm text-gray-400">Context Handling</div>
             </div>
-            <h3 className="text-xl font-bold">Multi-Agent Orchestration</h3>
-            <p className="text-gray-400">
-              Intelligently routes queries to specialized agents for comprehensive results.
+            <div className="p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl">
+              <div className="text-4xl font-bold text-green-400 mb-2">↓60%</div>
+              <div className="text-sm text-gray-400">TAT</div>
+            </div>
+            <div className="p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl">
+              <div className="text-4xl font-bold text-blue-400 mb-2">80%</div>
+              <div className="text-sm text-gray-400">Increased Precision</div>
+            </div>
+            <div className="p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl">
+              <div className="text-4xl font-bold text-purple-400 mb-2">40%</div>
+              <div className="text-sm text-gray-400">Platform Retention</div>
+            </div>
+          </div>
+        </div>
+
+        {/* One Super Agent Section */}
+        <div className="text-center mb-32">
+          <h2 className="text-5xl sm:text-6xl font-bold text-white mb-6">
+            One Super Agent.
+            <br />
+            <span className="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+              Infinite capabilities.
+            </span>
+          </h2>
+          <p className="text-xl text-gray-400 max-w-3xl mx-auto">
+            Stop switching between multiple AI tools. Sagent AI orchestrates the best agents
+            for your specific needs, delivering comprehensive, multi-dimensional insights.
+          </p>
+        </div>
+
+        {/* Use Cases Grid */}
+        <div className="grid md:grid-cols-3 gap-8 mb-32">
+          <div className="p-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:bg-white/10 transition-all">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center mb-6">
+              <Sparkles className="w-6 h-6 text-white" />
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-4">Market Research</h3>
+            <p className="text-gray-400 leading-relaxed">
+              Aggregate insights from multiple specialized research agents to get comprehensive market analysis in seconds.
             </p>
           </div>
 
-          <div className="glass rounded-2xl p-8 space-y-4 hover:bg-white/10 transition-all">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-              <Zap className="w-6 h-6 text-white" />
+          <div className="p-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:bg-white/10 transition-all">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-6">
+              <Sparkles className="w-6 h-6 text-white" />
             </div>
-            <h3 className="text-xl font-bold">Smart UI Generation</h3>
-            <p className="text-gray-400">
-              Automatically formats responses with graphs, tables, and visual elements.
+            <h3 className="text-2xl font-bold text-white mb-4">Scientific Research</h3>
+            <p className="text-gray-400 leading-relaxed">
+              Route complex scientific queries to specialized agents for accurate, citation-backed research.
             </p>
           </div>
 
-          <div className="glass rounded-2xl p-8 space-y-4 hover:bg-white/10 transition-all">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
-              <Mail className="w-6 h-6 text-white" />
+          <div className="p-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:bg-white/10 transition-all">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center mb-6">
+              <Sparkles className="w-6 h-6 text-white" />
             </div>
-            <h3 className="text-xl font-bold">Iterative Refinement</h3>
-            <p className="text-gray-400">
-              Edit any section of results with natural language instructions.
+            <h3 className="text-2xl font-bold text-white mb-4">People Search</h3>
+            <p className="text-gray-400 leading-relaxed">
+              Find and analyze information about people across multiple sources with intelligent agent routing.
             </p>
           </div>
         </div>
+
+        {/* Testimonials Section */}
+        <div className="mb-32">
+          <h2 className="text-4xl font-bold text-center text-white mb-12">Trusted by Industry Leaders</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="p-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl">
+                <div className="flex gap-1 mb-4">
+                  {[...Array(5)].map((_, idx) => (
+                    <Star key={idx} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+                <p className="text-gray-300 mb-6 leading-relaxed">
+                  "Sagent AI has transformed how we conduct research. The intelligent routing saves us hours of work every day."
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500" />
+                  <div>
+                    <div className="text-white font-medium">Industry Leader</div>
+                    <div className="text-gray-500 text-sm">Tech Company</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Final CTA */}
+        <div className="text-center">
+          <h2 className="text-5xl font-bold text-white mb-6">
+            Ready to experience
+            <br />
+            <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              intelligent AI routing?
+            </span>
+          </h2>
+          {!submitted && (
+            <Button
+              onClick={() => document.querySelector('[data-testid="waitlist-form"]')?.scrollIntoView({ behavior: 'smooth' })}
+              className="h-14 px-8 bg-white text-black hover:bg-gray-200 font-medium text-lg"
+            >
+              Join Waitlist
+              <ArrowRight className="ml-2 w-5 h-5" />
+            </Button>
+          )}
+        </div>
       </main>
 
-      <footer className="relative z-10 py-8 px-6 text-center text-gray-500 text-sm">
+      {/* Footer */}
+      <footer className="relative z-10 py-12 px-6 text-center text-gray-600 text-sm border-t border-white/10">
         <p>&copy; 2025 Sagent AI. All rights reserved.</p>
       </footer>
     </div>
