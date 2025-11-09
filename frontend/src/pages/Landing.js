@@ -13,6 +13,8 @@ export default function Landing() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
+  const [showTopEmailInput, setShowTopEmailInput] = useState(false);
+  const [topEmail, setTopEmail] = useState('');
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
@@ -54,11 +56,51 @@ export default function Landing() {
     }
   };
 
+  const handleTopWaitlistSubmit = async () => {
+    if (!topEmail) {
+      toast.error('Please enter your email');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // For top section, we'll just collect email without name
+      await submitWaitlist({ email: topEmail, name: 'Waitlist User' });
+      toast.success('Successfully joined the waitlist!');
+      setTopEmail('');
+      setShowTopEmailInput(false);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to join waitlist');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBottomWaitlistSubmit = async () => {
+    if (!email) {
+      toast.error('Please enter your email');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await submitWaitlist({ email, name: 'Waitlist User' });
+      toast.success('Successfully joined the waitlist!');
+      setEmail('');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to join waitlist');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const openWaitlist = () => {
     setIsWaitlistOpen(true);
     setSubmitted(false);
-    setEmail('');
     setName('');
+    if (!email && topEmail) {
+      setEmail(topEmail);
+    }
   };
 
   return (
