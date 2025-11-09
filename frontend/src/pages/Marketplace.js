@@ -97,8 +97,7 @@ export default function Marketplace({ user }) {
           </div>
           <div className="flex items-center gap-4">
             <a href="/chat" className="text-gray-400 hover:text-white transition-colors">Chat</a>
-            <a href="/marketplace" className="text-white">Marketplace</a>
-            <a href="/my-agents" className="text-gray-400 hover:text-white transition-colors">My Agents</a>
+            <a href="/agents" className="text-white">Agents</a>
             <a href="/pricing" className="text-gray-400 hover:text-white transition-colors">Pricing</a>
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500" />
