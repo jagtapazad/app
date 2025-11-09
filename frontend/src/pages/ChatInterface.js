@@ -18,7 +18,15 @@ export default function ChatInterface({ user }) {
   const [currentThread, setCurrentThread] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isNewChatActive, setIsNewChatActive] = useState(false);
+  const [loadingStage, setLoadingStage] = useState(0);
   const chatEndRef = useRef(null);
+
+  const loadingMessages = [
+    { icon: '🔍', text: 'Analyzing your query...' },
+    { icon: '🎯', text: 'Finding the right AI agents...' },
+    { icon: '🤖', text: 'Checking with Scira AI, Perplexity, Linkup, Exa...' },
+    { icon: '⚡', text: 'Synthesizing the answer...' }
+  ];
 
   useEffect(() => {
     loadThreads();
