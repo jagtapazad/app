@@ -44,20 +44,33 @@ export default function ChatInterface({ user }) {
       const response = await getChatHistory(50);
       const history = response.data || [];
       
-      // Convert old format to thread format with messages array
-      const convertedThreads = history.map(item => ({
-        id: item.id || `thread-${Date.now()}-${Math.random()}`,
-        messages: [{
+      // Group messages by thread_id
+      const threadMap = {};
+      
+      history.forEach(item => {
+        const threadId = item.thread_id || item.id;
+        if (!threadMap[threadId]) {
+          threadMap[threadId] = {
+            id: threadId,
+            messages: [],
+            title: item.query,
+            timestamp: item.timestamp
+          };
+        }
+        threadMap[threadId].messages.push({
           query: item.query,
           response: item.response,
           timestamp: item.timestamp,
           isLoading: false
-        }],
-        title: item.query,
-        timestamp: item.timestamp
-      }));
+        });
+      });
       
-      setThreads(convertedThreads);
+      // Convert to array and sort by timestamp
+      const threadsArray = Object.values(threadMap).sort((a, b) => 
+        new Date(b.timestamp) - new Date(a.timestamp)
+      );
+      
+      setThreads(threadsArray);
     } catch (error) {
       console.error('Failed to load threads:', error);
     }
