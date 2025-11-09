@@ -60,13 +60,19 @@ export default function ChatInterface({ user }) {
 
     setIsExecuting(true);
     setLoadingStage(0);
+    
+    // Randomly select 3 agents for this query
+    const shuffled = [...allAgents].sort(() => 0.5 - Math.random());
+    const randomAgents = shuffled.slice(0, 3);
+    setSelectedAgents(randomAgents);
+    
     const userQuery = query;
     const currentAgentChain = agentChain.length > 0 ? agentChain : [{ agent_name: 'Perplexity', purpose: 'Answer query' }];
     
-    // Cycle through loading messages
+    // Cycle through loading messages faster (1.5 seconds each)
     const loadingInterval = setInterval(() => {
-      setLoadingStage(prev => (prev + 1) % loadingMessages.length);
-    }, 3000);
+      setLoadingStage(prev => (prev + 1) % 4);
+    }, 1500);
     
     // Create new thread only if no current thread exists OR if New Chat was clicked
     if (!currentThread || isNewChatActive) {
