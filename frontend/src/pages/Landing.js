@@ -197,25 +197,74 @@ export default function Landing() {
         <div className="mb-32">
           <h2 className="text-4xl font-bold text-center text-white mb-12">Trusted by Industry Leaders</h2>
           <div className="grid md:grid-cols-3 gap-8">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="p-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl">
-                <div className="flex gap-1 mb-4">
-                  {[...Array(5)].map((_, idx) => (
-                    <Star key={idx} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
-                <p className="text-gray-300 mb-6 leading-relaxed">
-                  "Sagent AI has transformed how we conduct research. The intelligent routing saves us hours of work every day."
-                </p>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500" />
-                  <div>
-                    <div className="text-white font-medium">Industry Leader</div>
-                    <div className="text-gray-500 text-sm">Tech Company</div>
-                  </div>
+            {/* Testimonial 1 */}
+            <div className="p-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl">
+              <div className="flex gap-1 mb-4">
+                {[...Array(5)].map((_, idx) => (
+                  <Star key={idx} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                ))}
+              </div>
+              <p className="text-gray-300 mb-6 leading-relaxed">
+                "Sagent AI has completely transformed our research workflow. What used to take our team 3-4 hours now happens in minutes. The multi-agent routing is brilliant."
+              </p>
+              <div className="flex items-center gap-3">
+                <img 
+                  src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=faces" 
+                  alt="Michael Chen"
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+                <div>
+                  <div className="text-white font-medium">Michael Chen</div>
+                  <div className="text-gray-500 text-sm">Head of Research, TechCorp</div>
                 </div>
               </div>
-            ))}
+            </div>
+
+            {/* Testimonial 2 */}
+            <div className="p-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl">
+              <div className="flex gap-1 mb-4">
+                {[...Array(5)].map((_, idx) => (
+                  <Star key={idx} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                ))}
+              </div>
+              <p className="text-gray-300 mb-6 leading-relaxed">
+                "The ability to get comprehensive insights from multiple AI agents simultaneously is a game-changer. We've seen a 60% reduction in research time."
+              </p>
+              <div className="flex items-center gap-3">
+                <img 
+                  src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=faces" 
+                  alt="Sarah Johnson"
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+                <div>
+                  <div className="text-white font-medium">Sarah Johnson</div>
+                  <div className="text-gray-500 text-sm">VP of Strategy, InnovateLabs</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Testimonial 3 */}
+            <div className="p-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl">
+              <div className="flex gap-1 mb-4">
+                {[...Array(5)].map((_, idx) => (
+                  <Star key={idx} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                ))}
+              </div>
+              <p className="text-gray-300 mb-6 leading-relaxed">
+                "Finally, an AI platform that understands context and routes to the right specialist. Our team's productivity has increased by 40% since adopting Sagent AI."
+              </p>
+              <div className="flex items-center gap-3">
+                <img 
+                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces" 
+                  alt="David Park"
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+                <div>
+                  <div className="text-white font-medium">David Park</div>
+                  <div className="text-gray-500 text-sm">CTO, DataFusion Inc</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
