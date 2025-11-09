@@ -9,6 +9,56 @@ import { previewAgentChain, executeChatQuery, getChatHistory, editMessageSection
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
+// Resolve the markdown body to render from a DeepAgents response.
+const extractMarkdown = (response) => {
+  if (!response) return '';
+  if (response.synthesized?.markdown) {
+    return response.synthesized.markdown;
+  }
+
+  const result = response.result || response.raw_response?.result;
+  if (!result) return '';
+
+  if (typeof result === 'string') {
+    return result;
+  }
+
+  if (typeof result?.report === 'string') {
+    return result.report;
+  }
+
+  if (typeof result?.markdown === 'string') {
+    return result.markdown;
+  }
+
+  if (typeof result?.result === 'string') {
+    return result.result;
+  }
+
+  return '';
+};
+
+// Normalize the cited sources array for display.
+const extractSources = (response) => {
+  if (!response) return [];
+  if (Array.isArray(response.sources)) {
+    return response.sources;
+  }
+  if (Array.isArray(response.raw_response?.source)) {
+    return response.raw_response.source;
+  }
+  if (Array.isArray(response.result?.sources)) {
+    return response.result.sources;
+  }
+  return [];
+};
+
+// Surface the agent that handled the request for UI labels.
+const extractAgentName = (response) => {
+  if (!response) return '';
+  return response.agent_name || response.raw_response?.agent_name || '';
+};
+
 export default function ChatInterface({ user }) {
   const [query, setQuery] = useState('');
   const [agentChain, setAgentChain] = useState([]);
@@ -111,6 +161,7 @@ export default function ChatInterface({ user }) {
     e.preventDefault();
     if (!query.trim() || isExecuting) return;
 
+    const tempMessageId = `temp-${Date.now()}`;
     setIsExecuting(true);
     setLoadingStage(0);
     
@@ -129,6 +180,7 @@ export default function ChatInterface({ user }) {
       const newThread = {
         id: `thread-${Date.now()}`,
         messages: [{
+          id: tempMessageId,
           query: userQuery,
           response: null,
           timestamp: new Date().toISOString(),
@@ -145,6 +197,7 @@ export default function ChatInterface({ user }) {
       const updatedThread = {
         ...currentThread,
         messages: [...(currentThread.messages || []), {
+          id: tempMessageId,
           query: userQuery,
           response: null,
           timestamp: new Date().toISOString(),
@@ -170,6 +223,7 @@ export default function ChatInterface({ user }) {
       clearInterval(loadingInterval);
 
       const savedThreadId = response.data.thread_id || currentThread?.id || `thread-${Date.now()}`;
+      const resolvedMessageId = response.data.message_id || tempMessageId;
 
       setCurrentThread(prev => {
         if (!prev) return prev;
@@ -178,6 +232,7 @@ export default function ChatInterface({ user }) {
         if (lastMsgIndex >= 0) {
           updatedMessages[lastMsgIndex] = {
             ...updatedMessages[lastMsgIndex],
+            id: resolvedMessageId,
             response: response.data,
             isLoading: false
           };
@@ -186,19 +241,30 @@ export default function ChatInterface({ user }) {
       });
       
       setThreads(prev => prev.map(t => {
-        if (currentThread && (t.id === currentThread.id || t.id === savedThreadId)) {
-          const updatedMessages = [...(t.messages || [])];
-          const lastMsgIndex = updatedMessages.length - 1;
-          if (lastMsgIndex >= 0) {
-            updatedMessages[lastMsgIndex] = {
-              ...updatedMessages[lastMsgIndex],
+        const containsTempMessage = (t.messages || []).some(m => m.id === tempMessageId);
+        const isTargetThread = t.id === savedThreadId || (currentThread && t.id === currentThread.id) || containsTempMessage;
+        if (!isTargetThread) {
+          return t;
+        }
+
+        const updatedMessages = [...(t.messages || [])].map(msg => {
+          if (msg.id === tempMessageId || msg.id === resolvedMessageId) {
+            return {
+              ...msg,
+              id: resolvedMessageId,
               response: response.data,
               isLoading: false
             };
           }
-          return { ...t, id: savedThreadId, messages: updatedMessages };
-        }
-        return t;
+          return msg;
+        });
+
+        return {
+          ...t,
+          id: savedThreadId,
+          messages: updatedMessages,
+          timestamp: new Date().toISOString()
+        };
       }));
       
     } catch (error) {
@@ -444,21 +510,26 @@ export default function ChatInterface({ user }) {
                           onContextMenu={(e) => handleContextMenu(e, message.id, 'answer')}
                         >
                           <div className="flex items-center justify-between mb-4">
-                            <div className="text-xs text-gray-500 uppercase tracking-wider">Answer</div>
+                            <div className="flex flex-col gap-1">
+                              <div className="text-xs text-gray-500 uppercase tracking-wider">Answer</div>
+                              {extractAgentName(message.response) && (
+                                <div className="text-xs text-gray-600">Agent: {extractAgentName(message.response)}</div>
+                              )}
+                            </div>
                             <div className="flex gap-2">
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => copyToClipboard(message.response?.synthesized?.markdown || '')}
+                                onClick={() => copyToClipboard(extractMarkdown(message.response))}
                                 className="text-gray-400 hover:text-white h-7"
                               >
                                 <Copy className="w-3.5 h-3.5" />
                               </Button>
                             </div>
                           </div>
-                          {message.response?.synthesized?.markdown ? (
+                          {extractMarkdown(message.response) ? (
                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                              {message.response.synthesized.markdown}
+                              {extractMarkdown(message.response)}
                             </ReactMarkdown>
                           ) : (
                             <div className="text-gray-300 leading-relaxed">
@@ -470,6 +541,28 @@ export default function ChatInterface({ user }) {
                             </div>
                           )}
                         </div>
+
+                        {extractSources(message.response).length > 0 && (
+                          <div className="bg-white/5 border border-white/10 rounded-lg p-4 space-y-2">
+                            <div className="text-xs text-gray-500 uppercase tracking-wider">Sources</div>
+                            <ul className="space-y-2">
+                              {extractSources(message.response).map((source, index) => (
+                                <li key={source.id || source.url || index} className="text-sm text-gray-300">
+                                  {source.title ? <span className="font-medium text-white">{source.title}</span> : null}
+                                  {source.publisher ? <span className="text-gray-500 ml-2">({source.publisher})</span> : null}
+                                  {source.date ? <span className="text-gray-500 ml-2">{source.date}</span> : null}
+                                  {source.url && (
+                                    <div>
+                                      <a href={source.url} target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300 break-all">
+                                        {source.url}
+                                      </a>
+                                    </div>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
 
                         {/* Suggested Follow-ups */}
                         {msgIndex === (currentThread.messages?.length || 0) - 1 && (
