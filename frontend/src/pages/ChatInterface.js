@@ -370,9 +370,9 @@ export default function ChatInterface({ user }) {
                   <MessageSquare className="w-5 h-5" />
                 </Button>
               )}
-              <h1 className="text-lg font-medium text-white">Search</h1>
             </div>
             <div className="flex items-center gap-4">
+              <a href="/agents" className="text-gray-400 hover:text-white transition-colors text-sm">Agents</a>
               <a href="/pricing" className="text-gray-400 hover:text-white transition-colors text-sm">Pricing</a>
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500" />
