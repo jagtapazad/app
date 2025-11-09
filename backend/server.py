@@ -72,6 +72,7 @@ async def get_current_user(authorization: Optional[str] = None, session_token_co
     
     return User(**user_doc)
 
+
 # ===== DeepAgents Helpers =====
 async def call_deepagents(agent_name: str, user_query: str, thread_id: str) -> Dict[str, Any]:
     """Invoke DeepAgents chat endpoint and return JSON payload."""
