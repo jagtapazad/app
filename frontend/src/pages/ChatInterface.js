@@ -245,8 +245,8 @@ export default function ChatInterface({ user }) {
         {/* Sidebar Footer */}
         <div className="p-4 border-t border-white/10">
           <div className="flex items-center gap-4 text-sm">
-            <a href="/marketplace" className="text-gray-400 hover:text-white transition-colors">Marketplace</a>
-            <a href="/my-agents" className="text-gray-400 hover:text-white transition-colors">My Agents</a>
+            <a href="/agents" className="text-gray-400 hover:text-white transition-colors">Agents</a>
+            <a href="/pricing" className="text-gray-400 hover:text-white transition-colors">Pricing</a>
           </div>
         </div>
       </aside>
