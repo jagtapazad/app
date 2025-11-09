@@ -45,7 +45,13 @@ export default function ChatInterface({ user }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!query.trim() || isExecuting || !isNewChatActive) return;
+    if (!query.trim() || isExecuting) return;
+
+    // Check if New Chat was clicked
+    if (!isNewChatActive) {
+      toast.error('Please click "New Chat" to start a new conversation');
+      return;
+    }
 
     setIsExecuting(true);
     const userQuery = query;
