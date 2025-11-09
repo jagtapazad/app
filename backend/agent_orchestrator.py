@@ -10,50 +10,26 @@ class AgentOrchestrator:
         
     async def decompose_query(self, query: str, user_subscribed_agents: List[Dict], personalized: bool = False) -> List[Dict]:
         """
-        Use GPT-5 to decompose query into sub-queries and assign to specialized agents
+        Use GPT-4o-mini for faster decomposition (instead of GPT-5)
         """
         chat = LlmChat(
             api_key=self.llm_key,
             session_id=f"query_decompose_{hash(query)}",
-            system_message="""You are a smart agent router for Sagent AI. Your job is to:
-1. Analyze the user query
-2. Break it into sub-tasks if needed
-3. Assign each sub-task to the most appropriate specialized agent(s)
-4. Return a JSON array of agents in execution order
+            system_message="""You are a smart agent router. Analyze the query and return a JSON array of 1-3 agents.
 
-User's subscribed agents get priority but you can suggest other agents too.
+Return ONLY valid JSON array:
+[{"agent_id": "agent_name", "agent_name": "Display Name", "purpose": "brief purpose"}]
 
-Available agents categories:
-- People Research: Scira AI, Perplexity, Exa, Deerflow
-- Market Research: Scira AI, GPT Researcher, Linkup.so, Abacus.ai, Octagon AI, Perplexity, Exa, Parallel AI, Morphic, Nebius
-- Scientific Research: Scira AI, GPT Researcher, AnswerThis.io, Linkup.so, Abacus.ai, Octagon AI, Perplexity, Morphic, Nebius
-- General/Others: All agents
-
-Return ONLY a JSON array with this format:
-[{"agent_id": "agent_name", "agent_name": "Display Name", "purpose": "what this agent will do"}]"""
+Available agents: Perplexity, GPT Researcher, Scira AI, Exa, OpenAI Research"""
         )
         
-        # Try gpt-5, fallback to gpt-4o
+        # Use gpt-4o-mini for faster routing
+        chat.with_model("openai", "gpt-4o-mini")
+        
+        message = UserMessage(text=f"Query: {query}\n\nReturn agent chain JSON:")
+        
         try:
-            chat.with_model("openai", "gpt-5")
-        except:
-            chat.with_model("openai", "gpt-4o")
-        
-        subscribed_context = "\\n".join([f"- {a['name']}" for a in user_subscribed_agents]) if user_subscribed_agents else "None"
-        
-        message = UserMessage(
-            text=f"""Query: {query}
-
-User's subscribed agents: {subscribed_context}
-
-Analyze and return the agent chain."""
-        )
-        
-        response = await chat.send_message(message)
-        
-        # Parse JSON response
-        try:
-            # Extract JSON from response
+            response = await chat.send_message(message)
             content = response.strip()
             if "```json" in content:
                 content = content.split("```json")[1].split("```")[0]
@@ -61,13 +37,13 @@ Analyze and return the agent chain."""
                 content = content.split("```")[1].split("```")[0]
             
             agent_chain = json.loads(content.strip())
-            return agent_chain
-        except:
-            # Fallback to single agent
+            return agent_chain[:3]  # Max 3 agents
+        except Exception as e:
+            # Fast fallback
             return [{
                 "agent_id": "perplexity",
                 "agent_name": "Perplexity",
-                "purpose": "Answer the query comprehensively"
+                "purpose": "Answer the query"
             }]
     
     async def execute_agent_chain(self, query: str, agent_chain: List[Dict], fetch_ui: bool = False) -> Dict[str, Any]:
