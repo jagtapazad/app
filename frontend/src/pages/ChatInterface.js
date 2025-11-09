@@ -304,24 +304,37 @@ export default function ChatInterface({ user }) {
         <div className="flex-1 overflow-y-auto p-2">
           <div className="space-y-1">
             {filteredThreads.map((thread) => (
-              <button
+              <div
                 key={thread.id}
-                onClick={() => setCurrentThread(thread)}
-                className={`w-full text-left p-3 rounded-lg hover:bg-white/5 transition-colors ${
+                className={`group relative rounded-lg hover:bg-white/5 transition-colors ${
                   currentThread?.id === thread.id ? 'bg-white/10 border border-white/20' : ''
                 }`}
-                data-testid={`thread-${thread.id}`}
               >
-                <div className="flex items-start gap-2">
-                  <MessageSquare className="w-4 h-4 text-gray-400 mt-1 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-white truncate font-medium">{thread.title || thread.messages?.[0]?.query || thread.query || 'Untitled'}</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {new Date(thread.timestamp).toLocaleDateString()} · {thread.messages?.length || 1} msg
-                    </p>
+                <button
+                  onClick={() => setCurrentThread(thread)}
+                  className="w-full text-left p-3"
+                  data-testid={`thread-${thread.id}`}
+                >
+                  <div className="flex items-start gap-2">
+                    <MessageSquare className="w-4 h-4 text-gray-400 mt-1 flex-shrink-0" />
+                    <div className="flex-1 min-w-0 pr-6">
+                      <p className="text-sm text-white truncate font-medium">{thread.title || thread.messages?.[0]?.query || thread.query || 'Untitled'}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(thread.timestamp).toLocaleDateString()} · {thread.messages?.length || 1} msg
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </button>
+                </button>
+                
+                {/* Delete Button */}
+                <button
+                  onClick={(e) => deleteThread(thread.id, e)}
+                  className="absolute right-2 top-3 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-red-500/20 rounded"
+                  data-testid={`delete-thread-${thread.id}`}
+                >
+                  <Trash2 className="w-4 h-4 text-gray-400 hover:text-red-400" />
+                </button>
+              </div>
             ))}
           </div>
         </div>
