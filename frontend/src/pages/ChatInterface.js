@@ -453,28 +453,6 @@ export default function ChatInterface({ user }) {
         {/* Fixed Input Area */}
         <div className="border-t border-white/10 bg-black/80 backdrop-blur-xl">
           <div className="max-w-4xl mx-auto px-6 py-6">
-            {/* Agent Chain Flow - Visual Preview */}
-            {agentChain.length > 0 && (
-              <div className="mb-4 p-3 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-lg">
-                <div className="text-xs text-gray-400 mb-2 flex items-center gap-2">
-                  <Sparkles className="w-3 h-3" />
-                  <span>Routing to</span>
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  {agentChain.map((agent, i) => (
-                    <React.Fragment key={i}>
-                      <div className="px-3 py-1.5 bg-blue-500/20 border border-blue-500/30 rounded-md">
-                        <span className="text-sm text-blue-300 font-medium">{agent.agent_name}</span>
-                      </div>
-                      {i < agentChain.length - 1 && (
-                        <ChevronRight className="w-3.5 h-3.5 text-blue-400/50" />
-                      )}
-                    </React.Fragment>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Controls */}
             <div className="flex items-center gap-4 mb-3">
               <div className="flex items-center gap-2">
