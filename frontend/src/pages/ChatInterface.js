@@ -63,6 +63,7 @@ export default function ChatInterface({ user }) {
   const [query, setQuery] = useState('');
   const [agentChain, setAgentChain] = useState([]);
   const [personalized, setPersonalized] = useState(false);
+  const [searchMode, setSearchMode] = useState('detailed'); // 'quick' or 'detailed'
   const [isExecuting, setIsExecuting] = useState(false);
   const [threads, setThreads] = useState([]);
   const [currentThread, setCurrentThread] = useState(null);
