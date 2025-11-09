@@ -276,12 +276,12 @@ export default function ChatInterface({ user }) {
                       <div className="space-y-4 py-6">
                         <div className="flex items-center gap-3 text-gray-400">
                           <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
-                          <span className="text-lg">{loadingMessages[loadingStage].text}</span>
+                          <span className="text-lg">{getLoadingMessages(selectedAgents)[loadingStage].text}</span>
                         </div>
-                        {/* Show agent icons when checking with agents */}
+                        {/* Show agent badges when checking with agents */}
                         {loadingStage === 2 && (
                           <div className="flex gap-2 flex-wrap ml-9">
-                            {['Scira AI', 'Perplexity', 'Linkup', 'Exa'].map(agent => (
+                            {selectedAgents.map(agent => (
                               <span key={agent} className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-lg text-xs text-blue-300">
                                 {agent}
                               </span>
