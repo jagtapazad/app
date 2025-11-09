@@ -111,8 +111,8 @@ export default function Marketplace({ user }) {
       <main className="relative z-10 max-w-7xl mx-auto px-6 py-12">
         {/* Header Section */}
         <div className="mb-12">
-          <h1 className="text-5xl font-bold text-white mb-4">Agent Marketplace</h1>
-          <p className="text-xl text-gray-400">Discover and subscribe to specialized AI agents</p>
+          <h1 className="text-5xl font-bold text-white mb-4">AI Agents</h1>
+          <p className="text-xl text-gray-400">Discover specialized AI agents for your research needs</p>
         </div>
 
         {/* Search and Filters */}
