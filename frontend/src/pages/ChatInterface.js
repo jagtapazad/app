@@ -155,79 +155,92 @@ export default function ChatInterface({ user }) {
           ) : (
             messages.map((msg, idx) => (
               <div key={idx} className="space-y-4">
-                {/* User Query */}
+                {/* User Query - Right aligned as heading */}
                 <div className="flex justify-end">
-                  <div className="max-w-2xl bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
-                    <p className="text-white">{msg.query}</p>
+                  <div className="max-w-3xl">
+                    <h2 className="text-2xl font-bold text-white text-right mb-2">{msg.query}</h2>
+                    <div className="text-sm text-gray-500 text-right">
+                      {new Date(msg.timestamp).toLocaleTimeString()}
+                    </div>
                   </div>
                 </div>
+
+                {/* Loading State */}
+                {msg.isLoading && (
+                  <div className="flex items-center gap-3 text-gray-400">
+                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500"></div>
+                    <span>Processing your query...</span>
+                  </div>
+                )}
 
                 {/* Agent Response */}
-                <div className="space-y-4">
-                  {/* Agent Chain Used */}
-                  <div className="flex gap-2 flex-wrap">
-                    {msg.agent_chain?.map((agent, i) => (
-                      <div key={i} className="px-3 py-1 bg-blue-500/20 border border-blue-500/30 rounded-full text-xs text-blue-300">
-                        {agent.agent_name}
-                      </div>
-                    ))}
-                  </div>
+                {!msg.isLoading && msg.response && (
+                  <div className="space-y-4">
+                    {/* Agent Chain Used */}
+                    <div className="flex gap-2 flex-wrap">
+                      {msg.agent_chain?.map((agent, i) => (
+                        <div key={i} className="px-3 py-1 bg-blue-500/20 border border-blue-500/30 rounded-full text-xs text-blue-300">
+                          {agent.agent_name}
+                        </div>
+                      ))}
+                    </div>
 
-                  {/* Response Content */}
-                  <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
-                    {msg.response?.synthesized?.markdown && (
-                      <div className="prose prose-invert max-w-none">
-                        <ReactMarkdown>{msg.response.synthesized.markdown}</ReactMarkdown>
-                      </div>
-                    )}
+                    {/* Response Content */}
+                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
+                      {msg.response?.synthesized?.markdown && (
+                        <div className="prose prose-invert max-w-none">
+                          <ReactMarkdown>{msg.response.synthesized.markdown}</ReactMarkdown>
+                        </div>
+                      )}
 
-                    {/* UI Components (Graphs/Tables) */}
-                    {msg.response?.synthesized?.ui_components && Array.isArray(msg.response.synthesized.ui_components) && msg.response.synthesized.ui_components.length > 0 && (
-                      <div className="mt-6 space-y-4">
-                        {msg.response.synthesized.ui_components.map((component, i) => (
-                          <div key={i}>
-                            {component.type === 'graph' && component.data && Array.isArray(component.data) && (
-                              <div className="bg-black/30 p-4 rounded-xl">
-                                <ResponsiveContainer width="100%" height={300}>
-                                  <LineChart data={component.data}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                                    <XAxis dataKey="name" stroke="#999" />
-                                    <YAxis stroke="#999" />
-                                    <Tooltip contentStyle={{ backgroundColor: '#000', border: '1px solid #333' }} />
-                                    <Legend />
-                                    <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} />
-                                  </LineChart>
-                                </ResponsiveContainer>
-                              </div>
-                            )}
-                            {component.type === 'table' && component.data && Array.isArray(component.data) && component.data.length > 0 && (
-                              <div className="overflow-x-auto">
-                                <table className="w-full text-sm text-left">
-                                  <thead className="text-gray-400 border-b border-white/10">
-                                    <tr>
-                                      {Object.keys(component.data[0] || {}).map(key => (
-                                        <th key={key} className="px-4 py-2">{key}</th>
-                                      ))}
-                                    </tr>
-                                  </thead>
-                                  <tbody className="text-gray-300">
-                                    {component.data.map((row, ri) => (
-                                      <tr key={ri} className="border-b border-white/5">
-                                        {Object.values(row).map((val, vi) => (
-                                          <td key={vi} className="px-4 py-2">{String(val)}</td>
+                      {/* UI Components (Graphs/Tables) */}
+                      {msg.response?.synthesized?.ui_components && Array.isArray(msg.response.synthesized.ui_components) && msg.response.synthesized.ui_components.length > 0 && (
+                        <div className="mt-6 space-y-4">
+                          {msg.response.synthesized.ui_components.map((component, i) => (
+                            <div key={i}>
+                              {component.type === 'graph' && component.data && Array.isArray(component.data) && (
+                                <div className="bg-black/30 p-4 rounded-xl">
+                                  <ResponsiveContainer width="100%" height={300}>
+                                    <LineChart data={component.data}>
+                                      <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                                      <XAxis dataKey="name" stroke="#999" />
+                                      <YAxis stroke="#999" />
+                                      <Tooltip contentStyle={{ backgroundColor: '#000', border: '1px solid #333' }} />
+                                      <Legend />
+                                      <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} />
+                                    </LineChart>
+                                  </ResponsiveContainer>
+                                </div>
+                              )}
+                              {component.type === 'table' && component.data && Array.isArray(component.data) && component.data.length > 0 && (
+                                <div className="overflow-x-auto">
+                                  <table className="w-full text-sm text-left">
+                                    <thead className="text-gray-400 border-b border-white/10">
+                                      <tr>
+                                        {Object.keys(component.data[0] || {}).map(key => (
+                                          <th key={key} className="px-4 py-2">{key}</th>
                                         ))}
                                       </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                                    </thead>
+                                    <tbody className="text-gray-300">
+                                      {component.data.map((row, ri) => (
+                                        <tr key={ri} className="border-b border-white/5">
+                                          {Object.values(row).map((val, vi) => (
+                                            <td key={vi} className="px-4 py-2">{String(val)}</td>
+                                          ))}
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             ))
           )}
