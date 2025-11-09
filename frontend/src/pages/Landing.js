@@ -114,7 +114,7 @@ export default function Landing() {
 
       {/* Header */}
       <header className="relative z-10 px-6 py-6 flex justify-between items-center max-w-7xl mx-auto">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {/* Logo */}
           <img 
             src="https://customer-assets.emergentagent.com/job_smart-dispatch-7/artifacts/ghe15bl1_Screenshot%202025-11-05%20at%2011.17.40%20PM.png" 
