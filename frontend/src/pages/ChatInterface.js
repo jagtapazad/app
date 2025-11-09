@@ -232,15 +232,6 @@ export default function ChatInterface({ user }) {
             ) : (
               /* Thread Display - ChatGPT/Perplexity Style with Messages */
               <div className="space-y-8">
-                {/* Thread Title */}
-                <div>
-                  <h1 className="text-3xl font-bold text-white mb-2">{currentThread.title || currentThread.query}</h1>
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <Clock className="w-4 h-4" />
-                    <span>{new Date(currentThread.timestamp).toLocaleString()}</span>
-                  </div>
-                </div>
-
                 {/* Messages */}
                 {(currentThread.messages || []).map((message, msgIndex) => (
                   <div key={msgIndex} className="space-y-4">
