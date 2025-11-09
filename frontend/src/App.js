@@ -2,6 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import Landing from './pages/Landing';
+import ChatInterface from './pages/ChatInterface';
+import Marketplace from './pages/Marketplace';
+import MyAgents from './pages/MyAgents';
+import Analytics from './pages/Analytics';
 import { processSession, getCurrentUser } from './utils/api';
 import './App.css';
 
@@ -69,7 +73,7 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
@@ -79,67 +83,18 @@ function AppContent() {
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/chat" element={
-        user ? <ChatPlaceholder user={user} /> : <Navigate to="/" replace />
+        user ? <ChatInterface user={user} /> : <Navigate to="/" replace />
       } />
       <Route path="/marketplace" element={
-        user ? <MarketplacePlaceholder user={user} /> : <Navigate to="/" replace />
+        user ? <Marketplace user={user} /> : <Navigate to="/" replace />
       } />
       <Route path="/my-agents" element={
-        user ? <MyAgentsPlaceholder user={user} /> : <Navigate to="/" replace />
+        user ? <MyAgents user={user} /> : <Navigate to="/" replace />
       } />
       <Route path="/analytics" element={
-        user ? <AnalyticsPlaceholder user={user} /> : <Navigate to="/" replace />
+        user ? <Analytics user={user} /> : <Navigate to="/" replace />
       } />
     </Routes>
-  );
-}
-
-// Placeholder components (will be replaced with full implementations)
-function ChatPlaceholder({ user }) {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0f] via-[#0f1729] to-[#0a0a0f] flex items-center justify-center">
-      <div className="text-center space-y-4">
-        <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-gray-200 to-gray-500 flex items-center justify-center shadow-lg mx-auto">
-          <span className="text-3xl font-bold text-black">S</span>
-        </div>
-        <h1 className="text-3xl font-bold text-white">Welcome, {user.name}!</h1>
-        <p className="text-gray-400">Chat interface coming soon...</p>
-        <p className="text-sm text-gray-500">Backend is ready. Frontend pages in progress.</p>
-      </div>
-    </div>
-  );
-}
-
-function MarketplacePlaceholder({ user }) {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0f] via-[#0f1729] to-[#0a0a0f] flex items-center justify-center">
-      <div className="text-center space-y-4">
-        <h1 className="text-3xl font-bold text-white">Marketplace</h1>
-        <p className="text-gray-400">14 AI Agents ready to use</p>
-      </div>
-    </div>
-  );
-}
-
-function MyAgentsPlaceholder({ user }) {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0f] via-[#0f1729] to-[#0a0a0f] flex items-center justify-center">
-      <div className="text-center space-y-4">
-        <h1 className="text-3xl font-bold text-white">My Agents</h1>
-        <p className="text-gray-400">Your subscribed agents</p>
-      </div>
-    </div>
-  );
-}
-
-function AnalyticsPlaceholder({ user }) {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0f] via-[#0f1729] to-[#0a0a0f] flex items-center justify-center">
-      <div className="text-center space-y-4">
-        <h1 className="text-3xl font-bold text-white">Analytics</h1>
-        <p className="text-gray-400">Your usage statistics</p>
-      </div>
-    </div>
   );
 }
 
