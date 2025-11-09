@@ -96,25 +96,30 @@ export default function ChatInterface({ user }) {
 
       // Update the last message with response
       setCurrentThread(prev => {
-        const updatedMessages = [...prev.messages];
+        if (!prev) return prev;
+        const updatedMessages = [...(prev.messages || [])];
         const lastMsgIndex = updatedMessages.length - 1;
-        updatedMessages[lastMsgIndex] = {
-          ...updatedMessages[lastMsgIndex],
-          response: response.data,
-          isLoading: false
-        };
-        return { ...prev, messages: updatedMessages };
-      });
-      
-      setThreads(prev => prev.map(t => {
-        if (t.id === currentThread.id) {
-          const updatedMessages = [...t.messages];
-          const lastMsgIndex = updatedMessages.length - 1;
+        if (lastMsgIndex >= 0) {
           updatedMessages[lastMsgIndex] = {
             ...updatedMessages[lastMsgIndex],
             response: response.data,
             isLoading: false
           };
+        }
+        return { ...prev, messages: updatedMessages };
+      });
+      
+      setThreads(prev => prev.map(t => {
+        if (currentThread && t.id === currentThread.id) {
+          const updatedMessages = [...(t.messages || [])];
+          const lastMsgIndex = updatedMessages.length - 1;
+          if (lastMsgIndex >= 0) {
+            updatedMessages[lastMsgIndex] = {
+              ...updatedMessages[lastMsgIndex],
+              response: response.data,
+              isLoading: false
+            };
+          }
           return { ...t, messages: updatedMessages };
         }
         return t;
