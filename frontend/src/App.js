@@ -38,6 +38,8 @@ function AppContent() {
       // Development mode: Skip auth and use mock user
       if (DEV_MODE) {
         setUser(mockUser);
+        // Set a mock token for API calls
+        localStorage.setItem('session_token', 'dev-mock-token-123');
         setLoading(false);
         return;
       }
