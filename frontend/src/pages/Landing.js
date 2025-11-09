@@ -42,21 +42,12 @@ export default function Landing() {
       {/* Header */}
       <header className="relative z-10 px-6 py-6 flex justify-between items-center max-w-7xl mx-auto">
         <div className="flex items-center gap-3">
-          {/* Logo - Using the provided gradient swirl S */}
-          <div className="relative w-12 h-12">
-            <svg viewBox="0 0 100 100" className="w-full h-full">
-              <defs>
-                <radialGradient id="logoGradient" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
-                  <stop offset="50%" stopColor="#a0a0a0" stopOpacity="1" />
-                  <stop offset="100%" stopColor="#000000" stopOpacity="1" />
-                </radialGradient>
-              </defs>
-              {/* Swirling S shape */}
-              <path d="M20,20 Q30,10 50,30 Q70,50 80,40 L80,60 Q70,70 50,50 Q30,30 20,40 Z" fill="url(#logoGradient)" />
-              <path d="M80,80 Q70,90 50,70 Q30,50 20,60 L20,40 Q30,30 50,50 Q70,70 80,60 Z" fill="url(#logoGradient)" opacity="0.8" />
-            </svg>
-          </div>
+          {/* Logo */}
+          <img 
+            src="https://customer-assets.emergentagent.com/job_smart-dispatch-7/artifacts/ghe15bl1_Screenshot%202025-11-05%20at%2011.17.40%20PM.png" 
+            alt="Sagent AI Logo" 
+            className="w-12 h-12 object-contain"
+          />
           <span className="text-2xl font-medium text-white">agent AI</span>
         </div>
         <Button
