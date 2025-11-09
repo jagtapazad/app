@@ -217,34 +217,23 @@ export default function ChatInterface({ user }) {
               <div className="text-center py-32">
                 <Sparkles className="w-20 h-20 text-blue-400 mx-auto mb-6" />
                 <h2 className="text-4xl font-bold text-white mb-4">What can I help with?</h2>
-                <p className="text-gray-400 text-lg">Ask a question and let our specialized AI agents research it for you</p>
+                <p className="text-gray-400 text-lg">Click "New Chat" to start a conversation</p>
               </div>
             ) : (
               /* Thread Display - Perplexity Style */
-              <div className="space-y-8">
+              <div className="space-y-6">
                 {/* Query Header */}
                 <div>
-                  <h1 className="text-3xl font-bold text-white mb-3">{currentThread.query}</h1>
+                  <h1 className="text-3xl font-bold text-white mb-2">{currentThread.query}</h1>
                   <div className="flex items-center gap-2 text-sm text-gray-500">
                     <Clock className="w-4 h-4" />
                     <span>{new Date(currentThread.timestamp).toLocaleString()}</span>
                   </div>
                 </div>
 
-                {/* Agent Chain Badges */}
-                {currentThread.agent_chain && currentThread.agent_chain.length > 0 && (
-                  <div className="flex gap-2 flex-wrap pb-4 border-b border-white/10">
-                    {currentThread.agent_chain.map((agent, i) => (
-                      <div key={i} className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-lg text-sm text-blue-300">
-                        {agent.agent_name}
-                      </div>
-                    ))}
-                  </div>
-                )}
-
                 {/* Loading State */}
                 {currentThread.isLoading && (
-                  <div className="flex items-center gap-3 text-gray-400 py-8">
+                  <div className="flex items-center gap-3 text-gray-400 py-6">
                     <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
                     <span className="text-lg">Researching your query...</span>
                   </div>
@@ -252,10 +241,10 @@ export default function ChatInterface({ user }) {
 
                 {/* Answer Section */}
                 {!currentThread.isLoading && currentThread.response && (
-                  <div className="space-y-8">
+                  <div className="space-y-6">
                     {/* Main Answer */}
                     <div className="prose prose-lg prose-invert max-w-none">
-                      <div className="text-sm text-gray-500 uppercase tracking-wider mb-4">Answer</div>
+                      <div className="text-xs text-gray-500 uppercase tracking-wider mb-3">Answer</div>
                       {currentThread.response?.synthesized?.markdown ? (
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                           {currentThread.response.synthesized.markdown}
@@ -263,8 +252,7 @@ export default function ChatInterface({ user }) {
                       ) : (
                         <div className="text-gray-300 leading-relaxed">
                           {currentThread.response?.results?.map((result, i) => (
-                            <div key={i} className="mb-6">
-                              <h3 className="text-xl font-semibold text-white mb-2">{result.agent_name}</h3>
+                            <div key={i} className="mb-4">
                               <ReactMarkdown remarkPlugins={[remarkGfm]}>{result.content}</ReactMarkdown>
                             </div>
                           ))}
@@ -274,18 +262,18 @@ export default function ChatInterface({ user }) {
 
                     {/* Sources Section */}
                     {currentThread.response?.results && currentThread.response.results.length > 0 && (
-                      <div className="pt-8 border-t border-white/10">
-                        <div className="text-sm text-gray-500 uppercase tracking-wider mb-4">Sources</div>
-                        <div className="grid gap-4">
+                      <div className="pt-6 border-t border-white/10">
+                        <div className="text-xs text-gray-500 uppercase tracking-wider mb-3">Sources</div>
+                        <div className="grid gap-3">
                           {currentThread.response.results.map((result, i) => (
-                            <div key={i} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-all">
+                            <div key={i} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-4 hover:bg-white/10 transition-all">
                               <div className="flex items-start gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0">
-                                  <span className="text-white font-bold">{i + 1}</span>
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+                                  <span className="text-white text-sm font-bold">{i + 1}</span>
                                 </div>
                                 <div className="flex-1">
-                                  <h4 className="font-semibold text-white mb-1">{result.agent_name}</h4>
-                                  <p className="text-sm text-gray-400">{result.purpose}</p>
+                                  <h4 className="font-semibold text-white text-sm mb-1">{result.agent_name}</h4>
+                                  <p className="text-xs text-gray-400">{result.purpose}</p>
                                 </div>
                               </div>
                             </div>
