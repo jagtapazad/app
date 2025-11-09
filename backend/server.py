@@ -315,6 +315,7 @@ async def execute_chat_query(
     # Save to chat history
     chat_message = ChatMessage(
         user_id=user_id,
+        thread_id=request.thread_id or f"thread-{request.query[:20]}-{datetime.now(timezone.utc).timestamp()}",
         query=request.query,
         agent_chain=request.agent_chain,
         response=result,
