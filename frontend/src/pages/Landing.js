@@ -92,46 +92,17 @@ export default function Landing() {
             delivering comprehensive results beyond what any single AI can provide.
           </p>
 
-          {/* Waitlist Form or Success */}
-          {!submitted ? (
-            <form onSubmit={handleSubmit} className="max-w-md mx-auto mt-12" data-testid="waitlist-form">
-              <div className="space-y-4">
-                <Input
-                  type="text"
-                  placeholder="Your name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="bg-white/5 border-white/20 text-white placeholder:text-gray-500 h-14 text-lg backdrop-blur-sm"
-                  data-testid="waitlist-name-input"
-                />
-                <Input
-                  type="email"
-                  placeholder="your@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="bg-white/5 border-white/20 text-white placeholder:text-gray-500 h-14 text-lg backdrop-blur-sm"
-                  data-testid="waitlist-email-input"
-                />
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full h-14 bg-white text-black hover:bg-gray-200 font-medium text-lg"
-                  data-testid="waitlist-submit-button"
-                >
-                  {loading ? 'Joining...' : 'Join Waitlist'}
-                  {!loading && <ArrowRight className="ml-2 w-5 h-5" />}
-                </Button>
-              </div>
-            </form>
-          ) : (
-            <div className="max-w-md mx-auto mt-12 p-8 bg-white/5 backdrop-blur-sm border border-white/20 rounded-2xl" data-testid="waitlist-success">
-              <div className="flex items-center justify-center gap-3 text-green-400 mb-4">
-                <CheckCircle2 className="w-8 h-8" />
-                <span className="text-2xl font-medium">You're on the list!</span>
-              </div>
-              <p className="text-gray-400 text-center">We'll notify you when Sagent AI launches.</p>
-            </div>
-          )}
+          {/* Waitlist Button */}
+          <div className="mt-12">
+            <Button
+              onClick={openWaitlist}
+              className="h-14 px-8 bg-white text-black hover:bg-gray-200 font-medium text-lg"
+              data-testid="open-waitlist-button"
+            >
+              Join Waitlist
+              <ArrowRight className="ml-2 w-5 h-5" />
+            </Button>
+          </div>
         </div>
 
         {/* Integrated Agents Section */}
