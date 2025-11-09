@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Sparkles, ChevronDown, Loader2, Plus, Edit2, Trash2 } from 'lucide-react';
+import { Send, Sparkles, Plus, MessageSquare, Trash2, Edit2, MoreVertical, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { previewAgentChain, executeChatQuery, getChatHistory } from '@/utils/api';
 import ReactMarkdown from 'react-markdown';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import remarkGfm from 'remark-gfm';
 
 export default function ChatInterface({ user }) {
   const [query, setQuery] = useState('');
@@ -15,43 +14,32 @@ export default function ChatInterface({ user }) {
   const [fetchUI, setFetchUI] = useState(true);
   const [personalized, setPersonalized] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
-  const [messages, setMessages] = useState([]);
-  const [selectedAgent, setSelectedAgent] = useState(null);
+  const [threads, setThreads] = useState([]);
+  const [currentThread, setCurrentThread] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const chatEndRef = useRef(null);
 
   useEffect(() => {
-    loadChatHistory();
+    loadThreads();
   }, []);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [currentThread]);
 
-  const loadChatHistory = async () => {
+  const loadThreads = async () => {
     try {
-      const response = await getChatHistory(10);
-      setMessages(response.data || []);
+      const response = await getChatHistory(50);
+      setThreads(response.data || []);
     } catch (error) {
-      console.error('Failed to load chat history:', error);
+      console.error('Failed to load threads:', error);
     }
   };
 
-  // Preview agent chain as user types
-  useEffect(() => {
-    if (query.trim().length > 10) {
-      const debounce = setTimeout(async () => {
-        try {
-          const response = await previewAgentChain({ query, fetch_ui: fetchUI, personalized });
-          setAgentChain(response.data.agent_chain || []);
-        } catch (error) {
-          console.error('Preview error:', error);
-        }
-      }, 500);
-      return () => clearTimeout(debounce);
-    } else {
-      setAgentChain([]);
-    }
-  }, [query, fetchUI, personalized]);
+  const createNewThread = () => {
+    setCurrentThread(null);
+    setQuery('');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -59,11 +47,10 @@ export default function ChatInterface({ user }) {
 
     setIsExecuting(true);
     const userQuery = query;
-    const currentAgentChain = agentChain.length > 0 ? agentChain : [{ agent_name: 'Processing...', purpose: 'Routing query' }];
+    const currentAgentChain = agentChain.length > 0 ? agentChain : [{ agent_name: 'Perplexity', purpose: 'Answer query' }];
     
-    // Immediately show user query on screen
-    const pendingMessage = {
-      id: `temp-${Date.now()}`,
+    const newThread = {
+      id: `thread-${Date.now()}`,
       query: userQuery,
       agent_chain: currentAgentChain,
       response: null,
@@ -71,7 +58,8 @@ export default function ChatInterface({ user }) {
       isLoading: true
     };
     
-    setMessages(prev => [...prev, pendingMessage]);
+    setCurrentThread(newThread);
+    setThreads(prev => [newThread, ...prev]);
     setQuery('');
     setAgentChain([]);
 
@@ -83,220 +71,250 @@ export default function ChatInterface({ user }) {
         personalized
       });
 
-      // Update the pending message with actual response
-      setMessages(prev => prev.map(msg => 
-        msg.id === pendingMessage.id ? {
-          ...msg,
-          response: response.data,
-          agent_chain: response.data.agent_chain || currentAgentChain,
-          isLoading: false
-        } : msg
-      ));
+      const updatedThread = {
+        ...newThread,
+        response: response.data,
+        agent_chain: response.data.agent_chain || currentAgentChain,
+        isLoading: false
+      };
       
-      toast.success('Query executed successfully!');
+      setCurrentThread(updatedThread);
+      setThreads(prev => prev.map(t => t.id === newThread.id ? updatedThread : t));
+      toast.success('Response received!');
     } catch (error) {
       toast.error('Failed to execute query');
       console.error('Execution error:', error);
-      
-      // Remove pending message on error
-      setMessages(prev => prev.filter(msg => msg.id !== pendingMessage.id));
+      setThreads(prev => prev.filter(t => t.id !== newThread.id));
+      setCurrentThread(null);
     } finally {
       setIsExecuting(false);
     }
   };
 
-  const changeAgent = (index, newAgentId) => {
-    const updated = [...agentChain];
-    updated[index] = { ...updated[index], agent_id: newAgentId };
-    setAgentChain(updated);
-  };
-
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden">
-      {/* Background effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[120px]" />
-      </div>
-
-      {/* Header */}
-      <header className="relative z-10 border-b border-white/10 bg-black/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
+    <div className="min-h-screen bg-black flex">
+      {/* Left Sidebar - Chat History */}
+      <aside className={`${sidebarOpen ? 'w-72' : 'w-0'} border-r border-white/10 bg-black/50 backdrop-blur-sm transition-all duration-300 overflow-hidden flex flex-col`}>
+        {/* Sidebar Header */}
+        <div className="p-4 border-b border-white/10">
+          <div className="flex items-center gap-3 mb-4">
             <img 
               src="https://customer-assets.emergentagent.com/job_smart-dispatch-7/artifacts/ghe15bl1_Screenshot%202025-11-05%20at%2011.17.40%20PM.png" 
               alt="Sagent AI Logo" 
-              className="w-10 h-10 object-contain"
+              className="w-8 h-8 object-contain"
             />
-            <span className="text-xl font-medium text-white">agent AI</span>
+            <span className="text-lg font-medium text-white">agent AI</span>
           </div>
-          <div className="flex items-center gap-4">
-            <a href="/marketplace" className="text-gray-400 hover:text-white transition-colors">Marketplace</a>
-            <a href="/my-agents" className="text-gray-400 hover:text-white transition-colors">My Agents</a>
-            <a href="/analytics" className="text-gray-400 hover:text-white transition-colors">Analytics</a>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500" />
-              <span className="text-white text-sm">{user?.name}</span>
-            </div>
+          <Button
+            onClick={createNewThread}
+            className="w-full bg-white text-black hover:bg-gray-200 h-10"
+            data-testid="new-chat-button"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            New Chat
+          </Button>
+        </div>
+
+        {/* Thread List */}
+        <div className="flex-1 overflow-y-auto p-2">
+          <div className="space-y-1">
+            {threads.map((thread) => (
+              <button
+                key={thread.id}
+                onClick={() => setCurrentThread(thread)}
+                className={`w-full text-left p-3 rounded-lg hover:bg-white/5 transition-colors ${
+                  currentThread?.id === thread.id ? 'bg-white/10' : ''
+                }`}
+                data-testid={`thread-${thread.id}`}
+              >
+                <div className="flex items-start gap-2">
+                  <MessageSquare className="w-4 h-4 text-gray-400 mt-1 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-white truncate">{thread.query}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {new Date(thread.timestamp).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              </button>
+            ))}
           </div>
         </div>
-      </header>
 
-      {/* Main Chat Area */}
-      <main className="relative z-10 max-w-5xl mx-auto px-6 py-8">
-        {/* Messages */}
-        <div className="space-y-8 mb-32">
-          {messages.length === 0 ? (
-            <div className="text-center py-20">
-              <Sparkles className="w-16 h-16 text-blue-400 mx-auto mb-4" />
-              <h2 className="text-3xl font-bold text-white mb-2">Start Your Research</h2>
-              <p className="text-gray-400">Ask a question and let our AI agents handle it</p>
+        {/* Sidebar Footer */}
+        <div className="p-4 border-t border-white/10">
+          <div className="flex items-center gap-4 text-sm">
+            <a href="/marketplace" className="text-gray-400 hover:text-white transition-colors">Marketplace</a>
+            <a href="/my-agents" className="text-gray-400 hover:text-white transition-colors">My Agents</a>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Top Header */}
+        <header className="border-b border-white/10 bg-black/50 backdrop-blur-sm">
+          <div className="px-6 py-4 flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              {!sidebarOpen && (
+                <Button
+                  variant="ghost"
+                  onClick={() => setSidebarOpen(true)}
+                  className="text-white hover:bg-white/10"
+                >
+                  <MessageSquare className="w-5 h-5" />
+                </Button>
+              )}
+              <h1 className="text-lg font-medium text-white">Search</h1>
             </div>
-          ) : (
-            messages.map((msg, idx) => (
-              <div key={idx} className="space-y-4">
-                {/* User Query - Left aligned as heading */}
-                <div className="flex justify-start">
-                  <div className="max-w-3xl">
-                    <h2 className="text-2xl font-bold text-white mb-2">{msg.query}</h2>
-                    <div className="text-sm text-gray-500">
-                      {new Date(msg.timestamp).toLocaleTimeString()}
-                    </div>
+            <div className="flex items-center gap-4">
+              <a href="/analytics" className="text-gray-400 hover:text-white transition-colors text-sm">Analytics</a>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500" />
+                <span className="text-white text-sm">{user?.name}</span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Content Area */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="max-w-4xl mx-auto px-6 py-8">
+            {!currentThread ? (
+              /* Empty State */
+              <div className="text-center py-32">
+                <Sparkles className="w-20 h-20 text-blue-400 mx-auto mb-6" />
+                <h2 className="text-4xl font-bold text-white mb-4">What can I help with?</h2>
+                <p className="text-gray-400 text-lg">Ask a question and let our specialized AI agents research it for you</p>
+              </div>
+            ) : (
+              /* Thread Display - Perplexity Style */
+              <div className="space-y-8">
+                {/* Query Header */}
+                <div>
+                  <h1 className="text-3xl font-bold text-white mb-3">{currentThread.query}</h1>
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Clock className="w-4 h-4" />
+                    <span>{new Date(currentThread.timestamp).toLocaleString()}</span>
                   </div>
                 </div>
 
-                {/* Loading State */}
-                {msg.isLoading && (
-                  <div className="flex items-center gap-3 text-gray-400 ml-4">
-                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500"></div>
-                    <span>Processing your query...</span>
+                {/* Agent Chain Badges */}
+                {currentThread.agent_chain && currentThread.agent_chain.length > 0 && (
+                  <div className="flex gap-2 flex-wrap pb-4 border-b border-white/10">
+                    {currentThread.agent_chain.map((agent, i) => (
+                      <div key={i} className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-lg text-sm text-blue-300">
+                        {agent.agent_name}
+                      </div>
+                    ))}
                   </div>
                 )}
 
-                {/* Agent Response */}
-                {!msg.isLoading && msg.response && (
-                  <div className="space-y-4">
-                    {/* Agent Chain Used */}
-                    <div className="flex gap-2 flex-wrap">
-                      {msg.agent_chain?.map((agent, i) => (
-                        <div key={i} className="px-3 py-1 bg-blue-500/20 border border-blue-500/30 rounded-full text-xs text-blue-300">
-                          {agent.agent_name}
-                        </div>
-                      ))}
-                    </div>
+                {/* Loading State */}
+                {currentThread.isLoading && (
+                  <div className="flex items-center gap-3 text-gray-400 py-8">
+                    <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
+                    <span className="text-lg">Researching your query...</span>
+                  </div>
+                )}
 
-                    {/* Response Content */}
-                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
-                      {msg.response?.synthesized?.markdown && (
-                        <div className="prose prose-invert max-w-none">
-                          <ReactMarkdown>{msg.response.synthesized.markdown}</ReactMarkdown>
-                        </div>
-                      )}
-
-                      {/* UI Components (Graphs/Tables) */}
-                      {msg.response?.synthesized?.ui_components && Array.isArray(msg.response.synthesized.ui_components) && msg.response.synthesized.ui_components.length > 0 && (
-                        <div className="mt-6 space-y-4">
-                          {msg.response.synthesized.ui_components.map((component, i) => (
-                            <div key={i}>
-                              {component.type === 'graph' && component.data && Array.isArray(component.data) && (
-                                <div className="bg-black/30 p-4 rounded-xl">
-                                  <ResponsiveContainer width="100%" height={300}>
-                                    <LineChart data={component.data}>
-                                      <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                                      <XAxis dataKey="name" stroke="#999" />
-                                      <YAxis stroke="#999" />
-                                      <Tooltip contentStyle={{ backgroundColor: '#000', border: '1px solid #333' }} />
-                                      <Legend />
-                                      <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} />
-                                    </LineChart>
-                                  </ResponsiveContainer>
-                                </div>
-                              )}
-                              {component.type === 'table' && component.data && Array.isArray(component.data) && component.data.length > 0 && (
-                                <div className="overflow-x-auto">
-                                  <table className="w-full text-sm text-left">
-                                    <thead className="text-gray-400 border-b border-white/10">
-                                      <tr>
-                                        {Object.keys(component.data[0] || {}).map(key => (
-                                          <th key={key} className="px-4 py-2">{key}</th>
-                                        ))}
-                                      </tr>
-                                    </thead>
-                                    <tbody className="text-gray-300">
-                                      {component.data.map((row, ri) => (
-                                        <tr key={ri} className="border-b border-white/5">
-                                          {Object.values(row).map((val, vi) => (
-                                            <td key={vi} className="px-4 py-2">{String(val)}</td>
-                                          ))}
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              )}
+                {/* Answer Section */}
+                {!currentThread.isLoading && currentThread.response && (
+                  <div className="space-y-8">
+                    {/* Main Answer */}
+                    <div className="prose prose-lg prose-invert max-w-none">
+                      <div className="text-sm text-gray-500 uppercase tracking-wider mb-4">Answer</div>
+                      {currentThread.response?.synthesized?.markdown ? (
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {currentThread.response.synthesized.markdown}
+                        </ReactMarkdown>
+                      ) : (
+                        <div className="text-gray-300 leading-relaxed">
+                          {currentThread.response?.results?.map((result, i) => (
+                            <div key={i} className="mb-6">
+                              <h3 className="text-xl font-semibold text-white mb-2">{result.agent_name}</h3>
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>{result.content}</ReactMarkdown>
                             </div>
                           ))}
                         </div>
                       )}
                     </div>
+
+                    {/* Sources Section */}
+                    {currentThread.response?.results && currentThread.response.results.length > 0 && (
+                      <div className="pt-8 border-t border-white/10">
+                        <div className="text-sm text-gray-500 uppercase tracking-wider mb-4">Sources</div>
+                        <div className="grid gap-4">
+                          {currentThread.response.results.map((result, i) => (
+                            <div key={i} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-all">
+                              <div className="flex items-start gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+                                  <span className="text-white font-bold">{i + 1}</span>
+                                </div>
+                                <div className="flex-1">
+                                  <h4 className="font-semibold text-white mb-1">{result.agent_name}</h4>
+                                  <p className="text-sm text-gray-400">{result.purpose}</p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-            ))
-          )}
-          <div ref={chatEndRef} />
-        </div>
-      </main>
+            )}
+          </div>
+        </main>
 
-      {/* Fixed Input Area */}
-      <div className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/10 z-20">
-        <div className="max-w-5xl mx-auto px-6 py-6">
-          {/* Agent Chain Preview */}
-          {agentChain.length > 0 && (
-            <div className="mb-4 p-4 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl">
-              <div className="text-xs text-gray-400 mb-3">Routing to:</div>
-              <div className="flex gap-2 flex-wrap">
+        {/* Fixed Input Area */}
+        <div className="border-t border-white/10 bg-black/80 backdrop-blur-xl">
+          <div className="max-w-4xl mx-auto px-6 py-6">
+            {/* Agent Chain Preview */}
+            {agentChain.length > 0 && (
+              <div className="mb-3 flex gap-2 flex-wrap">
+                <span className="text-xs text-gray-500">Routing to:</span>
                 {agentChain.map((agent, i) => (
-                  <div key={i} className="flex items-center gap-2 bg-blue-500/20 border border-blue-500/30 rounded-lg px-3 py-2">
-                    <span className="text-sm text-blue-300">{agent.agent_name}</span>
-                    <ChevronDown className="w-4 h-4 text-blue-400" />
-                  </div>
+                  <span key={i} className="text-xs px-2 py-1 bg-blue-500/20 text-blue-300 rounded-md">
+                    {agent.agent_name}
+                  </span>
                 ))}
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Controls */}
-          <div className="flex items-center gap-4 mb-4">
-            <div className="flex items-center gap-2">
-              <Switch checked={fetchUI} onCheckedChange={setFetchUI} />
-              <span className="text-sm text-gray-400">Fetch UI</span>
+            {/* Controls */}
+            <div className="flex items-center gap-4 mb-3">
+              <div className="flex items-center gap-2">
+                <Switch checked={fetchUI} onCheckedChange={setFetchUI} />
+                <span className="text-xs text-gray-400">Fetch UI</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch checked={personalized} onCheckedChange={setPersonalized} />
+                <span className="text-xs text-gray-400">Personalize</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Switch checked={personalized} onCheckedChange={setPersonalized} />
-              <span className="text-sm text-gray-400">Personalize</span>
-            </div>
+
+            {/* Input */}
+            <form onSubmit={handleSubmit} className="flex gap-3">
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Ask anything..."
+                className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-gray-500 h-12 text-base focus:border-blue-500"
+                disabled={isExecuting}
+                data-testid="chat-input"
+              />
+              <Button
+                type="submit"
+                disabled={!query.trim() || isExecuting}
+                className="h-12 px-6 bg-blue-500 hover:bg-blue-600 text-white"
+                data-testid="send-button"
+              >
+                <Send className="w-5 h-5" />
+              </Button>
+            </form>
           </div>
-
-          {/* Input */}
-          <form onSubmit={handleSubmit} className="flex gap-3">
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Ask anything..."
-              className="flex-1 bg-white/5 border-white/20 text-white placeholder:text-gray-500 h-14 text-base"
-              disabled={isExecuting}
-              data-testid="chat-input"
-            />
-            <Button
-              type="submit"
-              disabled={!query.trim() || isExecuting}
-              className="h-14 px-6 bg-white text-black hover:bg-gray-200"
-              data-testid="send-button"
-            >
-              {isExecuting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-            </Button>
-          </form>
         </div>
       </div>
     </div>
