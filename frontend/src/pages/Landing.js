@@ -415,16 +415,9 @@ export default function Landing() {
               <p className="text-gray-300 mb-6 leading-relaxed">
                 "Finally, an AI platform that understands context and routes to the right specialist. Our team's productivity has increased by 40% since adopting Sagent AI."
               </p>
-              <div className="flex items-center gap-3">
-                <img 
-                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces" 
-                  alt="Arjun Patel"
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-                <div>
-                  <div className="text-white font-medium">Arjun Patel</div>
-                  <div className="text-gray-500 text-sm">Director of Analytics, Walmart</div>
-                </div>
+              <div>
+                <div className="text-white font-medium">Arjun Patel</div>
+                <div className="text-gray-500 text-sm">Analytics, Walmart</div>
               </div>
             </div>
           </div>
