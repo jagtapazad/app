@@ -202,6 +202,12 @@ async def get_all_agents():
     agents = await db.agents.find({}, {"_id": 0}).to_list(100)
     return agents
 
+@api_router.get("/agents/public", response_model=List[Agent])
+async def get_all_agents_public():
+    """Get all available agents (public endpoint for development)"""
+    agents = await db.agents.find({}, {"_id": 0}).to_list(100)
+    return agents
+
 @api_router.get("/agents/subscribed", response_model=List[Agent])
 async def get_subscribed_agents(
     authorization: Optional[str] = Header(None),
