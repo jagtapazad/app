@@ -781,6 +781,7 @@ export default function ChatInterface({ user }) {
                 {(currentThread.messages || []).map((message, msgIndex) => {
                   const markdownContent = extractMarkdown(message.response);
                   const plainTextContent = extractPlainText(message.response);
+                  const providers = extractProviders(message.response);
                   // Thinking subsection removed; follow-up messages are not displayed
 
                   return (
@@ -789,15 +790,43 @@ export default function ChatInterface({ user }) {
                         {message.query ? (
                           <>
                             <h2 className="text-3xl font-bold text-white mb-2">{message.query}</h2>
+                            <div className="flex items-center justify-between gap-4 flex-wrap">
+                              <div className="flex items-center gap-2 text-sm text-gray-500">
+                                <Clock className="w-4 h-4" />
+                                <span>{new Date(message.timestamp).toLocaleString()}</span>
+                              </div>
+                              {providers.length > 0 && (
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  {providers.map((provider, idx) => (
+                                    <span
+                                      key={idx}
+                                      className="px-2 py-1 text-xs bg-blue-500/10 border border-blue-500/30 rounded text-blue-300 font-medium"
+                                    >
+                                      {provider}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex items-center justify-between gap-4 flex-wrap">
                             <div className="flex items-center gap-2 text-sm text-gray-500">
                               <Clock className="w-4 h-4" />
                               <span>{new Date(message.timestamp).toLocaleString()}</span>
                             </div>
-                          </>
-                        ) : (
-                          <div className="flex items-center gap-2 text-sm text-gray-500">
-                            <Clock className="w-4 h-4" />
-                            <span>{new Date(message.timestamp).toLocaleString()}</span>
+                            {providers.length > 0 && (
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {providers.map((provider, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="px-2 py-1 text-xs bg-blue-500/10 border border-blue-500/30 rounded text-blue-300 font-medium"
+                                  >
+                                    {provider}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
