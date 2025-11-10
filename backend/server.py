@@ -52,26 +52,25 @@ logger = logging.getLogger(__name__)
 async def get_current_user(authorization: Optional[str] = None, session_token_cookie: Optional[str] = None) -> Optional[User]:
     """Get current user from session token (cookie or header)"""
     token = session_token_cookie or (authorization.replace("Bearer ", "") if authorization else None)
-    
+
     if not token:
         return None
-    
+
     # Check if session exists and not expired
     session = await db.user_sessions.find_one({
         "session_token": token,
         "expires_at": {"$gt": datetime.now(timezone.utc).isoformat()}
     })
-    
+
     if not session:
         return None
-    
+
     # Get user
     user_doc = await db.users.find_one({"id": session["user_id"]}, {"_id": 0})
     if not user_doc:
         return None
-    
-    return User(**user_doc)
 
+    return User(**user_doc)
 
 # ===== DeepAgents Helpers =====
 async def call_deepagents(agent_name: str, user_query: str, thread_id: str) -> Dict[str, Any]:
@@ -83,7 +82,6 @@ async def call_deepagents(agent_name: str, user_query: str, thread_id: str) -> D
     }
     return await orchestrator.send_chat(payload)
 
-
 # ===== WAITLIST ENDPOINTS =====
 @api_router.post("/waitlist", response_model=WaitlistEntry)
 async def create_waitlist_entry(entry: WaitlistCreate):
@@ -92,11 +90,11 @@ async def create_waitlist_entry(entry: WaitlistCreate):
     existing = await db.waitlist.find_one({"email": entry.email})
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
-    
+
     waitlist_obj = WaitlistEntry(**entry.model_dump())
     doc = waitlist_obj.model_dump()
     doc['timestamp'] = doc['timestamp'].isoformat()
-    
+
     await db.waitlist.insert_one(doc)
     return waitlist_obj
 
@@ -104,11 +102,11 @@ async def create_waitlist_entry(entry: WaitlistCreate):
 async def get_waitlist():
     """Get all waitlist entries (admin only - add auth later)"""
     entries = await db.waitlist.find({}, {"_id": 0}).to_list(1000)
-    
+
     for entry in entries:
         if isinstance(entry['timestamp'], str):
             entry['timestamp'] = datetime.fromisoformat(entry['timestamp'])
-    
+
     return entries
 
 @api_router.post("/admin/waitlist/{entry_id}/approve")
@@ -118,10 +116,10 @@ async def approve_waitlist(entry_id: str):
         {"id": entry_id},
         {"$set": {"approved": True}}
     )
-    
+
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Entry not found")
-    
+
     return {"message": "Approved successfully"}
 
 # ===== AUTHENTICATION ENDPOINTS =====
@@ -135,15 +133,15 @@ async def process_session(x_session_id: str = Header(...)):
             headers={"X-Session-ID": x_session_id},
             timeout=10
         )
-        
+
         if response.status_code != 200:
             raise HTTPException(status_code=401, detail="Invalid session")
-        
+
         data = response.json()
-        
+
         # Check if user exists
         user_doc = await db.users.find_one({"email": data["email"]})
-        
+
         if not user_doc:
             # Create new user
             user = User(
@@ -155,15 +153,15 @@ async def process_session(x_session_id: str = Header(...)):
             user_dict = user.model_dump()
             user_dict['created_at'] = user_dict['created_at'].isoformat()
             await db.users.insert_one(user_dict)
-            
+
             # Initialize user credits
             credits = UserCredits(user_id=user.id)
             await db.user_credits.insert_one(credits.model_dump())
-        
+
         # Create session
         session_token = data["session_token"]
         expires_at = datetime.now(timezone.utc) + timedelta(days=7)
-        
+
         session = UserSession(
             user_id=data["id"],
             session_token=session_token,
@@ -172,9 +170,9 @@ async def process_session(x_session_id: str = Header(...)):
         session_dict = session.model_dump()
         session_dict['expires_at'] = session_dict['expires_at'].isoformat()
         session_dict['created_at'] = session_dict['created_at'].isoformat()
-        
+
         await db.user_sessions.insert_one(session_dict)
-        
+
         return SessionDataResponse(
             id=data["id"],
             email=data["email"],
@@ -182,7 +180,7 @@ async def process_session(x_session_id: str = Header(...)):
             picture=data.get("picture", ""),
             session_token=session_token
         )
-    
+
     except requests.RequestException as e:
         logger.error(f"Error calling auth service: {e}")
         raise HTTPException(status_code=500, detail="Authentication failed")
@@ -206,10 +204,10 @@ async def logout(
 ):
     """Logout user"""
     token = session_token or (authorization.replace("Bearer ", "") if authorization else None)
-    
+
     if token:
         await db.user_sessions.delete_one({"session_token": token})
-    
+
     # Clear cookie
     response.delete_cookie("session_token")
     return {"message": "Logged out successfully"}
@@ -236,11 +234,11 @@ async def get_subscribed_agents(
     user = await get_current_user(authorization, session_token)
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    
+
     # Get user's subscribed agent IDs
     user_agents = await db.user_agents.find({"user_id": user.id}, {"_id": 0}).to_list(100)
     agent_ids = [ua["agent_id"] for ua in user_agents]
-    
+
     # Get agent details
     agents = await db.agents.find({"id": {"$in": agent_ids}}, {"_id": 0}).to_list(100)
     return agents
@@ -255,16 +253,16 @@ async def subscribe_agent(
     user = await get_current_user(authorization, session_token)
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    
+
     # Check if already subscribed
     existing = await db.user_agents.find_one({"user_id": user.id, "agent_id": agent_id})
     if existing:
         raise HTTPException(status_code=400, detail="Already subscribed")
-    
+
     user_agent = UserAgent(user_id=user.id, agent_id=agent_id)
     doc = user_agent.model_dump()
     doc['subscribed_at'] = doc['subscribed_at'].isoformat()
-    
+
     await db.user_agents.insert_one(doc)
     return {"message": "Subscribed successfully"}
 
@@ -278,11 +276,11 @@ async def unsubscribe_agent(
     user = await get_current_user(authorization, session_token)
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    
+
     result = await db.user_agents.delete_one({"user_id": user.id, "agent_id": agent_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Not subscribed")
-    
+
     return {"message": "Unsubscribed successfully"}
 
 # ===== CHAT ENDPOINTS =====
@@ -405,13 +403,13 @@ async def delete_thread(
     """Delete all messages in a thread"""
     user = await get_current_user(authorization, session_token)
     user_id = user.id if user else "demo-user-123"
-    
+
     # Delete all messages with this thread_id
     result = await db.chat_history.delete_many({"thread_id": thread_id, "user_id": user_id})
-    
+
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Thread not found")
-    
+
     return {"message": f"Deleted {result.deleted_count} messages", "deleted_count": result.deleted_count}
 
 # ===== ANALYTICS ENDPOINTS =====
@@ -423,32 +421,32 @@ async def get_analytics(
     """Get user's usage analytics"""
     user = await get_current_user(authorization, session_token)
     user_id = user.id if user else "demo-user-123"
-    
+
     # Get analytics entries
     entries = await db.analytics.find(
         {"user_id": user_id},
         {"_id": 0}
     ).to_list(1000)
-    
+
     for entry in entries:
         if isinstance(entry.get('timestamp'), str):
             entry['timestamp'] = datetime.fromisoformat(entry['timestamp'])
-    
+
     # Get credit balance
     credits = await db.user_credits.find_one({"user_id": user_id}, {"_id": 0})
-    
+
     # Aggregate stats
     total_queries = len(entries)
     total_cost = sum([e.get("cost", 0) for e in entries])
     agent_usage = {}
-    
+
     for entry in entries:
         agent_name = entry.get("agent_name", "Unknown")
         if agent_name not in agent_usage:
             agent_usage[agent_name] = {"queries": 0, "cost": 0}
         agent_usage[agent_name]["queries"] += 1
         agent_usage[agent_name]["cost"] += entry.get("cost", 0)
-    
+
     return {
         "total_queries": total_queries,
         "total_cost": total_cost,

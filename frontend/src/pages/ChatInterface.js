@@ -93,6 +93,78 @@ const extractPlainText = (response) => {
   return coerceToString(primary);
 };
 
+// Extract unique providers/tools used from the response
+const extractProviders = (response) => {
+  if (!response) return [];
+  
+  const providers = new Set();
+  
+  // Extract providers from sources array
+  const sources = extractSources(response);
+  sources.forEach(source => {
+    // Check if source has provider field
+    if (source.provider) {
+      providers.add(source.provider);
+    }
+    
+    // Also check if source is a string with "provider: xxx" pattern
+    if (typeof source === 'string') {
+      const providerMatch = source.match(/,\s*provider:\s*(\w+)/i);
+      if (providerMatch && providerMatch[1]) {
+        providers.add(providerMatch[1]);
+      }
+    }
+    
+    // Check if source has a text/content field with provider pattern
+    const sourceText = source.text || source.content || source.citation || '';
+    if (sourceText) {
+      const providerMatch = sourceText.match(/,\s*provider:\s*(\w+)/i);
+      if (providerMatch && providerMatch[1]) {
+        providers.add(providerMatch[1]);
+      }
+    }
+  });
+  
+  // Check top-level provider field
+  if (response.provider) {
+    providers.add(response.provider);
+  }
+  
+  // Check raw_response.provider
+  if (response.raw_response?.provider) {
+    providers.add(response.raw_response.provider);
+  }
+  
+  // Check tools array
+  if (Array.isArray(response.tools)) {
+    response.tools.forEach(tool => {
+      if (typeof tool === 'string') providers.add(tool);
+      else if (tool?.name) providers.add(tool.name);
+      else if (tool?.provider) providers.add(tool.provider);
+    });
+  }
+  
+  // Check raw_response.tools
+  if (Array.isArray(response.raw_response?.tools)) {
+    response.raw_response.tools.forEach(tool => {
+      if (typeof tool === 'string') providers.add(tool);
+      else if (tool?.name) providers.add(tool.name);
+      else if (tool?.provider) providers.add(tool.provider);
+    });
+  }
+  
+  // Check tools_used array
+  if (Array.isArray(response.tools_used)) {
+    response.tools_used.forEach(tool => providers.add(tool));
+  }
+  
+  if (Array.isArray(response.raw_response?.tools_used)) {
+    response.raw_response.tools_used.forEach(tool => providers.add(tool));
+  }
+  
+  return Array.from(providers).filter(Boolean);
+};
+
 const extractFollowUpMessages = (statePayload) => {
   if (!statePayload) return [];
 
@@ -233,9 +305,9 @@ export default function ChatInterface({ user }) {
     try {
       const response = await getChatHistory(50);
       const history = response.data || [];
-      
+
       const threadMap = {};
-      
+
       history.forEach(item => {
         const threadId = item.thread_id || item.id;
         if (!threadMap[threadId]) {
@@ -254,11 +326,11 @@ export default function ChatInterface({ user }) {
           isLoading: false
         });
       });
-      
-      const threadsArray = Object.values(threadMap).sort((a, b) => 
+
+      const threadsArray = Object.values(threadMap).sort((a, b) =>
         new Date(b.timestamp) - new Date(a.timestamp)
       );
-      
+
       setThreads(threadsArray);
     } catch (error) {
       console.error('Failed to load threads:', error);
@@ -564,9 +636,9 @@ export default function ChatInterface({ user }) {
 
   const deleteThread = async (threadId, e) => {
     e.stopPropagation();
-    
+
     if (!window.confirm('Delete this conversation?')) return;
-    
+
     try {
       // Delete from database - delete all messages with this thread_id
       await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/chat/thread/${threadId}`, {
@@ -575,16 +647,16 @@ export default function ChatInterface({ user }) {
           'Authorization': `Bearer ${localStorage.getItem('session_token')}`
         }
       });
-      
+
       // Remove from state
       setThreads(prev => prev.filter(t => t.id !== threadId));
-      
+
       // Clear current thread if it's the one being deleted
       if (currentThread?.id === threadId) {
         setCurrentThread(null);
         setActiveThreadId(uuidv4());
       }
-      
+
       toast.success('Conversation deleted');
     } catch (error) {
       console.error('Delete error:', error);
@@ -592,7 +664,7 @@ export default function ChatInterface({ user }) {
     }
   };
 
-  const filteredThreads = threads.filter(t => 
+  const filteredThreads = threads.filter(t =>
     t.title?.toLowerCase().includes(searchHistory.toLowerCase())
   );
 
@@ -602,9 +674,9 @@ export default function ChatInterface({ user }) {
       <aside className={`${sidebarOpen ? 'w-72' : 'w-0'} border-r border-white/10 bg-black/50 backdrop-blur-sm transition-all duration-300 overflow-hidden flex flex-col`}>
         <div className="p-4 border-b border-white/10">
           <div className="flex items-center gap-1 mb-4">
-            <img 
-              src="https://customer-assets.emergentagent.com/job_smart-dispatch-7/artifacts/ghe15bl1_Screenshot%202025-11-05%20at%2011.17.40%20PM.png" 
-              alt="Sagent AI Logo" 
+            <img
+              src="https://customer-assets.emergentagent.com/job_smart-dispatch-7/artifacts/ghe15bl1_Screenshot%202025-11-05%20at%2011.17.40%20PM.png"
+              alt="Sagent AI Logo"
               className="w-8 h-8 object-contain"
             />
             <span className="text-lg font-medium text-white">agent AI</span>
@@ -617,7 +689,7 @@ export default function ChatInterface({ user }) {
             <Plus className="w-4 h-4 mr-2" />
             New Chat
           </Button>
-          
+
           {/* Search History */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
@@ -657,7 +729,7 @@ export default function ChatInterface({ user }) {
                     </div>
                   </div>
                 </button>
-                
+
                 {/* Delete Button */}
                 <button
                   onClick={(e) => deleteThread(thread.id, e)}
@@ -709,14 +781,14 @@ export default function ChatInterface({ user }) {
           <div className="max-w-4xl mx-auto px-6 py-4 min-h-[calc(100vh-200px)] flex flex-col justify-center">
             {!currentThread ? (
               <div className="text-center">
-                <img 
+                <img
                   src="https://customer-assets.emergentagent.com/job_smart-dispatch-7/artifacts/37zbur7o_Screenshot%202025-11-05%20at%2011.17.40%20PM.png"
                   alt="Sagent AI Logo"
                   className="w-16 h-16 mx-auto mb-4 object-contain"
                 />
                 <h2 className="text-3xl font-bold text-white mb-3">What can I help with?</h2>
                 <p className="text-gray-400 mb-6">Ask a question and let our specialized AI agents research it for you</p>
-                
+
                 {/* Example Prompts - Compact */}
                 <div className="grid md:grid-cols-2 gap-3 max-w-2xl mx-auto">
                   {examplePrompts.map((prompt, i) => (
@@ -735,6 +807,7 @@ export default function ChatInterface({ user }) {
                 {(currentThread.messages || []).map((message, msgIndex) => {
                   const markdownContent = extractMarkdown(message.response);
                   const plainTextContent = extractPlainText(message.response);
+                  const providers = extractProviders(message.response);
                   // Thinking subsection removed; follow-up messages are not displayed
 
                   return (
@@ -743,15 +816,43 @@ export default function ChatInterface({ user }) {
                         {message.query ? (
                           <>
                             <h2 className="text-3xl font-bold text-white mb-2">{message.query}</h2>
+                            <div className="flex items-center justify-between gap-4 flex-wrap">
+                              <div className="flex items-center gap-2 text-sm text-gray-500">
+                                <Clock className="w-4 h-4" />
+                                <span>{new Date(message.timestamp).toLocaleString()}</span>
+                              </div>
+                              {providers.length > 0 && (
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  {providers.map((provider, idx) => (
+                                    <span
+                                      key={idx}
+                                      className="px-2 py-1 text-xs bg-blue-500/10 border border-blue-500/30 rounded text-blue-300 font-medium"
+                                    >
+                                      {provider}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex items-center justify-between gap-4 flex-wrap">
                             <div className="flex items-center gap-2 text-sm text-gray-500">
                               <Clock className="w-4 h-4" />
                               <span>{new Date(message.timestamp).toLocaleString()}</span>
                             </div>
-                          </>
-                        ) : (
-                          <div className="flex items-center gap-2 text-sm text-gray-500">
-                            <Clock className="w-4 h-4" />
-                            <span>{new Date(message.timestamp).toLocaleString()}</span>
+                            {providers.length > 0 && (
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {providers.map((provider, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="px-2 py-1 text-xs bg-blue-500/10 border border-blue-500/30 rounded text-blue-300 font-medium"
+                                  >
+                                    {provider}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
