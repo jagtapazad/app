@@ -46,6 +46,92 @@ const markdownComponents = {
   td: ({ children }) => <td className="text-sm px-3 py-2 border-b border-white/10 align-top">{children}</td>,
 };
 
+// Attempt to parse a string as JSON. Returns { ok, value }.
+const tryParseJson = (maybeJson) => {
+  if (typeof maybeJson !== 'string') return { ok: false, value: null };
+  const trimmed = maybeJson.trim();
+  if (!trimmed) return { ok: false, value: null };
+  // Only attempt if it looks like JSON
+  const startsLikeJson = trimmed.startsWith('{') || trimmed.startsWith('[');
+  if (!startsLikeJson) return { ok: false, value: null };
+  try {
+    return { ok: true, value: JSON.parse(trimmed) };
+  } catch {
+    return { ok: false, value: null };
+  }
+};
+
+// Extract the first valid JSON array (e.g., a list of sources) from within arbitrary plaintext.
+// This scans for a '[' whose next non-space char is '{', then balances brackets to find the matching ']'.
+// Returns the parsed array or null if none found.
+const extractFirstJsonArrayFromText = (text) => {
+  if (typeof text !== 'string' || !text) return null;
+  const n = text.length;
+  let i = 0;
+  while (i < n) {
+    const start = text.indexOf('[', i);
+    if (start === -1) break;
+    // Find next non-space after '['
+    let j = start + 1;
+    while (j < n && /\s/.test(text[j])) j += 1;
+    const nextChar = text[j];
+    // We only consider arrays of objects to avoid conflicts with footnote-style [1], [6], etc.
+    if (nextChar === '{') {
+      // Balance square brackets
+      let depth = 0;
+      for (let k = start; k < n; k += 1) {
+        const ch = text[k];
+        if (ch === '[') depth += 1;
+        else if (ch === ']') depth -= 1;
+        if (depth === 0) {
+          const candidate = text.slice(start, k + 1);
+          try {
+            const parsed = JSON.parse(candidate);
+            if (Array.isArray(parsed)) return parsed;
+          } catch {
+            // fall through and continue searching
+          }
+          // continue after this closing bracket
+          i = k + 1;
+          continue;
+        }
+      }
+      // Unbalanced; stop.
+      break;
+    }
+    // Continue search past this '['
+    i = start + 1;
+  }
+  return null;
+};
+
+// Return the start/end span of the first JSON array-of-objects found in text.
+const getFirstJsonArraySpan = (text) => {
+  if (typeof text !== 'string' || !text) return null;
+  const n = text.length;
+  let i = 0;
+  while (i < n) {
+    const start = text.indexOf('[', i);
+    if (start === -1) break;
+    let j = start + 1;
+    while (j < n && /\s/.test(text[j])) j += 1;
+    if (text[j] === '{') {
+      let depth = 0;
+      for (let k = start; k < n; k += 1) {
+        const ch = text[k];
+        if (ch === '[') depth += 1;
+        else if (ch === ']') depth -= 1;
+        if (depth === 0) {
+          return { start, end: k };
+        }
+      }
+      return null;
+    }
+    i = start + 1;
+  }
+  return null;
+};
+
 // Resolve the markdown body to render from a DeepAgents response.
 const coerceToString = (val) => {
   if (val == null) return '';
@@ -63,23 +149,126 @@ const coerceToString = (val) => {
 const extractMarkdown = (response) => {
   if (!response) return '';
   const primary = response.result ?? response.raw_response?.result;
+  // If primary is a jsonified string, prefer "report" → "markdown" → "result"
+  if (typeof primary === 'string') {
+    const parsed = tryParseJson(primary);
+    if (parsed.ok && parsed.value && typeof parsed.value === 'object') {
+      const obj = parsed.value;
+      if (obj.report != null) return coerceToString(obj.report);
+      if (obj.markdown != null) return coerceToString(obj.markdown);
+      if (obj.result != null) return coerceToString(obj.result);
+    }
+    // If plaintext with embedded JSON array (sources), strip it from the rendered body
+    const span = getFirstJsonArraySpan(primary);
+    if (span) {
+      const cleaned = (primary.slice(0, span.start) + primary.slice(span.end + 1)).trim();
+      return cleaned;
+    }
+  }
+  // Otherwise fall back to existing logic
   return coerceToString(primary);
 };
 
 // Normalize the cited sources array for display.
 const extractSources = (response) => {
   if (!response) return [];
-  if (Array.isArray(response.sources)) {
-    return response.sources;
+  // 1) Direct structured sources on the response object
+  if (Array.isArray(response.sources)) return response.sources;
+  if (Array.isArray(response.raw_response?.source)) return response.raw_response.source;
+  if (Array.isArray(response.result?.sources)) return response.result.sources;
+  if (Array.isArray(response.result?.source)) return response.result.source;
+
+  // 2) If result is a jsonified string, parse and extract sources/source
+  const primary = response.result ?? response.raw_response?.result;
+  if (typeof primary === 'string') {
+    const parsed = tryParseJson(primary);
+    if (parsed.ok && parsed.value && typeof parsed.value === 'object') {
+      const obj = parsed.value;
+      if (Array.isArray(obj.sources)) return obj.sources;
+      if (Array.isArray(obj.source)) return obj.source;
+    }
   }
-  if (Array.isArray(response.raw_response?.source)) {
-    return response.raw_response.source;
+
+  // 3) If we have plaintext (markdown-like) content, search for an embedded JSON array
+  const textBody = coerceToString(primary);
+  const span = getFirstJsonArraySpan(textBody);
+  if (span) {
+    const candidate = textBody.slice(span.start, span.end + 1);
+    try {
+      const embedded = JSON.parse(candidate);
+      if (Array.isArray(embedded)) return embedded;
+    } catch {}
   }
-  if (Array.isArray(response.result?.sources)) {
-    return response.result.sources;
-  }
+
   return [];
 };
+
+// Heuristic date parser for source objects
+const parseSourceDate = (src) => {
+  const raw = src?.date;
+  if (!raw) return 0;
+  if (raw instanceof Date) return raw.getTime();
+  if (typeof raw === 'number') return raw;
+  if (typeof raw === 'string') {
+    const s = raw.trim();
+    // Range like "2019-2024" or with en/em dash "2019–2024"
+    const range = s.match(/(\d{4})\s*[–—-]\s*(\d{4})/);
+    if (range) {
+      const endYear = Number(range[2]);
+      if (!Number.isNaN(endYear)) return new Date(`${endYear}-12-31`).getTime();
+    }
+    // YYYY[-MM[-DD]]
+    const ymd = s.match(/^(\d{4})(?:-(\d{2}))?(?:-(\d{2}))?$/);
+    if (ymd) {
+      const y = ymd[1];
+      const m = ymd[2] || '12';
+      const d = ymd[3] || '31';
+      const ts = Date.parse(`${y}-${m}-${d}`);
+      if (!Number.isNaN(ts)) return ts;
+    }
+    const ts = Date.parse(s);
+    if (!Number.isNaN(ts)) return ts;
+  }
+  return 0;
+};
+
+// Group sources by provider, return Map(provider -> sources[])
+const groupSourcesByProvider = (sources) => {
+  const map = new Map();
+  sources.forEach((src) => {
+    const provider = src?.provider || 'unknown';
+    if (!map.has(provider)) map.set(provider, []);
+    map.get(provider).push(src);
+  });
+  return map;
+};
+
+// Compute provider stats for stacked bar
+const providerStats = (sources) => {
+  const counts = {};
+  let total = 0;
+  sources.forEach((s) => {
+    const p = s?.provider || 'unknown';
+    counts[p] = (counts[p] || 0) + 1;
+    total += 1;
+  });
+  const ordered = Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([p]) => p);
+  return { counts, total, ordered };
+};
+
+// Static palette for stacked segments
+const providerSegmentClasses = [
+  'bg-blue-500/70',
+  'bg-emerald-500/70',
+  'bg-purple-500/70',
+  'bg-amber-500/70',
+  'bg-pink-500/70',
+  'bg-cyan-500/70',
+  'bg-rose-500/70',
+  'bg-lime-500/70',
+  'bg-sky-500/70',
+  'bg-fuchsia-500/70',
+];
 
 // Surface the agent that handled the request for UI labels.
 const extractAgentName = (response) => {
@@ -87,9 +276,21 @@ const extractAgentName = (response) => {
   return response.agent_name || response.raw_response?.agent_name || '';
 };
 
+const displayAgentName = (name) => {
+  if (!name) return '';
+  return String(name).toLowerCase() === 'loop' ? 'clarification' : name;
+};
+
 const extractPlainText = (response) => {
   if (!response) return '';
   const primary = response.result ?? response.raw_response?.result;
+  if (typeof primary === 'string') {
+    const span = getFirstJsonArraySpan(primary);
+    if (span) {
+      const cleaned = (primary.slice(0, span.start) + primary.slice(span.end + 1)).trim();
+      return cleaned;
+    }
+  }
   return coerceToString(primary);
 };
 
@@ -535,10 +736,11 @@ export default function ChatInterface({ user }) {
             // mark pending loader off
             const idxPending = messages.findIndex(m => m.id === tempMessageId);
             if (idxPending >= 0) messages[idxPending] = { ...messages[idxPending], isLoading: false };
-            // de-dup against last AI content
+            // de-dup against last AI content and skip empty
             const lastMsg = messages.slice(-1)[0];
             const lastContent = lastMsg && !lastMsg.query ? coerceToString(lastMsg?.response?.result ?? lastMsg?.response) : '';
-            if (!(lastContent && lastContent.trim() === (finalContent || '').trim())) {
+            const trimmedFinal = (finalContent || '').trim();
+            if (trimmedFinal && !(lastContent && lastContent.trim() === trimmedFinal)) {
               messages.push({
                 id: `final-${Date.now()}`,
                 query: '',
@@ -618,7 +820,6 @@ export default function ChatInterface({ user }) {
     } catch (error) {
       clearInterval(loadingInterval);
       console.error('Execution error:', error);
-      toast.error('DeepAgents request failed; polling state for updates...');
       // keep loader on while polling
       setPendingMessageLoading(true);
       // do not clear stateInterval here; let it continue polling
@@ -804,7 +1005,14 @@ export default function ChatInterface({ user }) {
               </div>
             ) : (
               <div className="space-y-8">
-                {(currentThread.messages || []).map((message, msgIndex) => {
+                {((currentThread.messages || []).filter((message) => {
+                  if (message?.query) return true;
+                  if (message?.response) {
+                    const content = coerceToString(message.response?.result ?? message.response?.raw_response?.result);
+                    return Boolean(content && content.trim());
+                  }
+                  return false;
+                })).map((message, msgIndex) => {
                   const markdownContent = extractMarkdown(message.response);
                   const plainTextContent = extractPlainText(message.response);
                   const providers = extractProviders(message.response);
@@ -817,10 +1025,6 @@ export default function ChatInterface({ user }) {
                           <>
                             <h2 className="text-3xl font-bold text-white mb-2">{message.query}</h2>
                             <div className="flex items-center justify-between gap-4 flex-wrap">
-                              <div className="flex items-center gap-2 text-sm text-gray-500">
-                                <Clock className="w-4 h-4" />
-                                <span>{new Date(message.timestamp).toLocaleString()}</span>
-                              </div>
                               {providers.length > 0 && (
                                 <div className="flex items-center gap-2 flex-wrap">
                                   {providers.map((provider, idx) => (
@@ -884,7 +1088,7 @@ export default function ChatInterface({ user }) {
                               <div className="flex flex-col gap-1">
                                 <div className="text-xs text-gray-500 uppercase tracking-wider">Answer</div>
                                 {extractAgentName(message.response) && (
-                                  <div className="text-xs text-gray-600">Agent: {extractAgentName(message.response)}</div>
+                                  <div className="text-xs text-gray-600">Agent: {displayAgentName(extractAgentName(message.response))}</div>
                                 )}
                               </div>
                               <div className="flex gap-2">
@@ -910,27 +1114,89 @@ export default function ChatInterface({ user }) {
                             )}
                           </div>
 
-                          {extractSources(message.response).length > 0 && (
-                            <div className="bg-white/5 border border-white/10 rounded-lg p-4 space-y-2">
-                              <div className="text-xs text-gray-500 uppercase tracking-wider">Sources</div>
-                              <ul className="space-y-2">
-                                {extractSources(message.response).map((source, index) => (
-                                  <li key={source.id || source.url || index} className="text-sm text-gray-300">
-                                    {source.title ? <span className="font-medium text-white">{source.title}</span> : null}
-                                    {source.publisher ? <span className="text-gray-500 ml-2">({source.publisher})</span> : null}
-                                    {source.date ? <span className="text-gray-500 ml-2">{source.date}</span> : null}
-                                    {source.url && (
-                                      <div>
-                                        <a href={source.url} target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300 break-all">
-                                          {source.url}
-                                        </a>
+                          {(() => {
+                            const srcs = extractSources(message.response);
+                            if (!srcs || srcs.length === 0) return null;
+                            const groups = groupSourcesByProvider(srcs);
+                            const stats = providerStats(srcs);
+                            return (
+                              <div className="bg-white/5 border border-white/10 rounded-lg p-4 space-y-4">
+                                <div className="flex items-start justify-between gap-4">
+                                  <div className="text-xs text-gray-500 uppercase tracking-wider">Sources</div>
+                                  {stats.total > 0 && (
+                                    <div className="flex flex-col items-end gap-2">
+                                      <div className="h-3 w-56 sm:w-72 md:w-80 bg-white/10 rounded overflow-hidden flex" aria-label="Provider usage">
+                                        {stats.ordered.map((p, idx) => {
+                                          const count = stats.counts[p] || 0;
+                                          const pct = Math.round((count / stats.total) * 100);
+                                          const cls = providerSegmentClasses[idx % providerSegmentClasses.length];
+                                          return (
+                                            <div
+                                              key={p}
+                                              title={`${p}: ${pct}% (${count}/${stats.total})`}
+                                              aria-label={`${p}: ${pct}%`}
+                                              className={`${cls}`}
+                                              style={{ width: `${Math.max(pct, 1)}%` }}
+                                            />
+                                          );
+                                        })}
                                       </div>
-                                    )}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
+                                      <div className="flex flex-wrap justify-end gap-x-3 gap-y-1">
+                                        {stats.ordered.map((p, idx) => {
+                                          const count = stats.counts[p] || 0;
+                                          const pct = Math.round((count / stats.total) * 100);
+                                          const cls = providerSegmentClasses[idx % providerSegmentClasses.length];
+                                          return (
+                                            <div key={`legend-${p}`} className="flex items-center gap-1 text-[11px]">
+                                              <span className={`inline-block h-2 w-2 rounded ${cls}`} />
+                                              <span className="text-gray-300">{p}</span>
+                                              <span className="text-gray-500">{` ${pct}% (${count})`}</span>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                                <details className="mt-1">
+                                  <summary className="cursor-pointer text-xs text-gray-400 uppercase tracking-wider hover:text-gray-300">
+                                    links
+                                  </summary>
+                                  <div className="space-y-3 mt-2">
+                                    {stats.ordered.map((providerName, idx) => {
+                                      const list = (groups.get && groups.get(providerName)) || [];
+                                      const sorted = list.slice().sort((a, b) => parseSourceDate(b) - parseSourceDate(a));
+                                      return (
+                                        <div key={providerName}>
+                                          <div className="flex items-center gap-2">
+                                            <span className="px-2 py-1 text-xs bg-blue-500/10 border border-blue-500/30 rounded text-blue-300 font-medium">
+                                              {providerName} · {sorted.length}
+                                            </span>
+                                          </div>
+                                          <ul className="space-y-2 mt-1">
+                                            {sorted.map((source, sidx) => (
+                                              <li key={source.id || source.url || sidx} className="text-sm text-gray-300">
+                                                {source.title ? <span className="font-medium text-white">{source.title}</span> : null}
+                                                {source.publisher ? <span className="text-gray-500 ml-2">({source.publisher})</span> : null}
+                                                {source.date ? <span className="text-gray-500 ml-2">{source.date}</span> : null}
+                                                {source.url && (
+                                                  <div>
+                                                    <a href={source.url} target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300 break-all">
+                                                      {source.url}
+                                                    </a>
+                                                  </div>
+                                                )}
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </details>
+                              </div>
+                            );
+                          })()}
 
                           {/* Suggested Follow-ups */}
                           {msgIndex === (currentThread.messages?.length || 0) - 1 && (
