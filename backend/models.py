@@ -6,7 +6,7 @@ import uuid
 # Waitlist Model
 class WaitlistEntry(BaseModel):
     model_config = ConfigDict(extra="ignore")
-    
+
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     email: str
     name: str
@@ -20,7 +20,7 @@ class WaitlistCreate(BaseModel):
 # User Models
 class User(BaseModel):
     model_config = ConfigDict(extra="ignore")
-    
+
     id: str
     email: str
     name: str
@@ -29,7 +29,7 @@ class User(BaseModel):
 
 class UserSession(BaseModel):
     model_config = ConfigDict(extra="ignore")
-    
+
     user_id: str
     session_token: str
     expires_at: datetime
@@ -38,7 +38,7 @@ class UserSession(BaseModel):
 # Agent Models
 class Agent(BaseModel):
     model_config = ConfigDict(extra="ignore")
-    
+
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
     categories: List[str]
@@ -51,7 +51,7 @@ class Agent(BaseModel):
 
 class UserAgent(BaseModel):
     model_config = ConfigDict(extra="ignore")
-    
+
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str
     agent_id: str
@@ -70,7 +70,7 @@ class ChatQuery(BaseModel):
 
 class ChatMessage(BaseModel):
     model_config = ConfigDict(extra="ignore")
-    
+
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str
     thread_id: str
@@ -82,9 +82,9 @@ class ChatMessage(BaseModel):
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class ChatExecuteRequest(BaseModel):
-    query: str
+    user_query: str
+    agent_name: str = "smart_router"
     thread_id: Optional[str] = None
-    agent_chain: List[Dict[str, Any]]
     fetch_ui: bool = False
     personalized: bool = False
 
@@ -97,7 +97,7 @@ class EditOperation(BaseModel):
 # Analytics Models
 class AnalyticsEntry(BaseModel):
     model_config = ConfigDict(extra="ignore")
-    
+
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str
     agent_id: str
@@ -108,7 +108,7 @@ class AnalyticsEntry(BaseModel):
 
 class UserCredits(BaseModel):
     model_config = ConfigDict(extra="ignore")
-    
+
     user_id: str
     total_credits: float = 100.0
     used_credits: float = 0.0

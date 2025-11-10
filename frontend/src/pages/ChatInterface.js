@@ -1,41 +1,69 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Sparkles, Plus, MessageSquare, Clock, Copy, RotateCcw, ChevronRight, Search, X, Trash2, Edit2 } from 'lucide-react';
+import { Send, Plus, MessageSquare, Clock, Copy, Trash2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { previewAgentChain, executeChatQuery, getChatHistory, editMessageSection } from '@/utils/api';
+import { previewAgentChain, getChatHistory, deepagentChat, deepagentState } from '@/utils/api';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { v4 as uuidv4 } from 'uuid';
+
+const markdownComponents = {
+  a: ({ href, children }) => (
+    <a href={href} target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300 underline break-words">
+      {children}
+    </a>
+  ),
+  h1: ({ children }) => <h1 className="mt-6 mb-3 text-2xl font-bold">{children}</h1>,
+  h2: ({ children }) => <h2 className="mt-5 mb-2 text-xl font-semibold">{children}</h2>,
+  h3: ({ children }) => <h3 className="mt-4 mb-2 text-lg font-semibold">{children}</h3>,
+  p: ({ children }) => <p className="leading-relaxed mb-3">{children}</p>,
+  ul: ({ children }) => <ul className="list-disc pl-6 space-y-1 mb-3">{children}</ul>,
+  ol: ({ children }) => <ol className="list-decimal pl-6 space-y-1 mb-3">{children}</ol>,
+  li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+  blockquote: ({ children }) => (
+    <blockquote className="border-l-4 border-white/20 pl-3 italic text-gray-300 mb-3">{children}</blockquote>
+  ),
+  pre: ({ children }) => (
+    <pre className="bg-black/40 border border-white/10 rounded-md p-3 overflow-x-auto mb-3">{children}</pre>
+  ),
+  code: ({ inline, className, children }) => (
+    inline ? (
+      <code className="bg-white/10 rounded px-1 py-0.5">{children}</code>
+    ) : (
+      <code className={className}>{children}</code>
+    )
+  ),
+  table: ({ children }) => (
+    <div className="overflow-x-auto mb-3">
+      <table className="min-w-full border-collapse">{children}</table>
+    </div>
+  ),
+  thead: ({ children }) => <thead className="bg-white/5">{children}</thead>,
+  th: ({ children }) => <th className="text-left text-sm font-semibold px-3 py-2 border-b border-white/10">{children}</th>,
+  td: ({ children }) => <td className="text-sm px-3 py-2 border-b border-white/10 align-top">{children}</td>,
+};
 
 // Resolve the markdown body to render from a DeepAgents response.
+const coerceToString = (val) => {
+  if (val == null) return '';
+  if (typeof val === 'string') return val;
+  if (Array.isArray(val)) return val.filter(Boolean).map(String).join('\n\n');
+  if (typeof val === 'object') {
+    if ('report' in val) return coerceToString(val.report);
+    if ('markdown' in val) return coerceToString(val.markdown);
+    if ('result' in val) return coerceToString(val.result);
+    try { return JSON.stringify(val, null, 2); } catch (_) { return String(val); }
+  }
+  return String(val);
+};
+
 const extractMarkdown = (response) => {
   if (!response) return '';
-  if (response.synthesized?.markdown) {
-    return response.synthesized.markdown;
-  }
-
-  const result = response.result || response.raw_response?.result;
-  if (!result) return '';
-
-  if (typeof result === 'string') {
-    return result;
-  }
-
-  if (typeof result?.report === 'string') {
-    return result.report;
-  }
-
-  if (typeof result?.markdown === 'string') {
-    return result.markdown;
-  }
-
-  if (typeof result?.result === 'string') {
-    return result.result;
-  }
-
-  return '';
+  const primary = response.result ?? response.raw_response?.result;
+  return coerceToString(primary);
 };
 
 // Normalize the cited sources array for display.
@@ -59,6 +87,90 @@ const extractAgentName = (response) => {
   return response.agent_name || response.raw_response?.agent_name || '';
 };
 
+const extractPlainText = (response) => {
+  if (!response) return '';
+  const primary = response.result ?? response.raw_response?.result;
+  return coerceToString(primary);
+};
+
+const extractFollowUpMessages = (statePayload) => {
+  if (!statePayload) return [];
+
+  const collected = [];
+
+  // 1) Top-level messages array (some backends return it here)
+  if (Array.isArray(statePayload.messages)) {
+    statePayload.messages.forEach((entry) => {
+      if (typeof entry?.content === 'string' && entry.content.trim()) {
+        collected.push(entry.content);
+      }
+      if (Array.isArray(entry?.content)) {
+        entry.content.forEach(item => {
+          if (typeof item === 'string' && item.trim()) {
+            collected.push(item);
+          } else if (item?.text) {
+            collected.push(item.text);
+          }
+        });
+      }
+      if (entry?.content?.text) {
+        collected.push(entry.content.text);
+      }
+      if (entry?.content && typeof entry.content === 'object' && !Array.isArray(entry.content)) {
+        try { collected.push(JSON.stringify(entry.content, null, 2)); } catch (_) {}
+      }
+    });
+  }
+
+  // 2) LangGraph state channels: messages
+  const channelMessages = statePayload.state?.channels?.messages;
+  if (Array.isArray(channelMessages)) {
+    channelMessages.forEach((entry) => {
+      if (typeof entry?.content === 'string' && entry.content.trim()) {
+        collected.push(entry.content);
+      }
+      if (Array.isArray(entry?.content)) {
+        entry.content.forEach(item => {
+          if (typeof item === 'string' && item.trim()) {
+            collected.push(item);
+          } else if (item?.text) {
+            collected.push(item.text);
+          }
+        });
+      }
+      if (entry?.content?.text) {
+        collected.push(entry.content.text);
+      }
+      if (entry?.content && typeof entry.content === 'object' && !Array.isArray(entry.content)) {
+        try { collected.push(JSON.stringify(entry.content, null, 2)); } catch (_) {}
+      }
+    });
+  }
+
+  // 3) Output channel (often contains synthesized JSON string)
+  const output = statePayload.state?.channels?.output;
+  if (output) {
+    if (typeof output === 'string') {
+      try {
+        const parsed = JSON.parse(output);
+        if (typeof parsed?.report === 'string') {
+          collected.push(parsed.report);
+        } else if (typeof parsed?.result === 'string') {
+          collected.push(parsed.result);
+        } else {
+          collected.push(JSON.stringify(parsed, null, 2));
+        }
+      } catch (error) {
+        collected.push(output);
+      }
+    } else if (typeof output === 'object') {
+      try { collected.push(JSON.stringify(output, null, 2)); } catch (_) {}
+    }
+  }
+
+  return collected;
+};
+
 export default function ChatInterface({ user }) {
   const [query, setQuery] = useState('');
   const [agentChain, setAgentChain] = useState([]);
@@ -71,9 +183,10 @@ export default function ChatInterface({ user }) {
   const [isNewChatActive, setIsNewChatActive] = useState(false);
   const [loadingStage, setLoadingStage] = useState(0);
   const [selectedAgents, setSelectedAgents] = useState([]);
-  const [contextMenu, setContextMenu] = useState(null);
+  const [activeThreadId, setActiveThreadId] = useState(() => uuidv4());
   const [searchHistory, setSearchHistory] = useState('');
   const chatEndRef = useRef(null);
+  const seenStateMsgIdsRef = useRef(new Set());
 
   const allAgents = ['Scira AI', 'GPT Researcher', 'Deerflow', 'Linkup.so', 'Abacus.ai', 'Octagon AI', 'Perplexity', 'Exa', 'AnswerThis.io', 'Parallel AI', 'Morphic', 'OpenAI Research', 'Nebius', 'Clado.ai', 'Appoloi'];
 
@@ -120,9 +233,9 @@ export default function ChatInterface({ user }) {
     try {
       const response = await getChatHistory(50);
       const history = response.data || [];
-      
+
       const threadMap = {};
-      
+
       history.forEach(item => {
         const threadId = item.thread_id || item.id;
         if (!threadMap[threadId]) {
@@ -141,11 +254,11 @@ export default function ChatInterface({ user }) {
           isLoading: false
         });
       });
-      
-      const threadsArray = Object.values(threadMap).sort((a, b) => 
+
+      const threadsArray = Object.values(threadMap).sort((a, b) =>
         new Date(b.timestamp) - new Date(a.timestamp)
       );
-      
+
       setThreads(threadsArray);
     } catch (error) {
       console.error('Failed to load threads:', error);
@@ -156,155 +269,291 @@ export default function ChatInterface({ user }) {
     setCurrentThread(null);
     setQuery('');
     setIsNewChatActive(true);
+    setActiveThreadId(uuidv4());
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!query.trim() || isExecuting) return;
 
+    const userQuery = query.trim();
     const tempMessageId = `temp-${Date.now()}`;
     setIsExecuting(true);
     setLoadingStage(0);
-    
+
     const shuffled = [...allAgents].sort(() => 0.5 - Math.random());
     const randomAgents = shuffled.slice(0, 3);
     setSelectedAgents(randomAgents);
-    
-    const userQuery = query;
-    const currentAgentChain = agentChain.length > 0 ? agentChain : [{ 
-      agent_name: searchMode === 'quick' ? 'normal_search' : 'smart_router', 
-      purpose: 'Answer query' 
-    }];
-    
+
+    const chosenAgent = searchMode === 'quick' ? 'normal_search' : 'smart_router';
+    const resolvedThreadId = currentThread?.id || activeThreadId || uuidv4();
+
     const loadingInterval = setInterval(() => {
       setLoadingStage(prev => (prev + 1) % 4);
     }, 1500);
-    
+
+    const messageStub = {
+      id: tempMessageId,
+      query: userQuery,
+      response: null,
+      timestamp: new Date().toISOString(),
+      isLoading: true
+    };
+
+    setActiveThreadId(resolvedThreadId);
+    // Reset seen state message IDs for this request
+    seenStateMsgIdsRef.current = new Set();
+
     if (!currentThread || isNewChatActive) {
       const newThread = {
-        id: `thread-${Date.now()}`,
-        messages: [{
-          id: tempMessageId,
-          query: userQuery,
-          response: null,
-          timestamp: new Date().toISOString(),
-          isLoading: true
-        }],
+        id: resolvedThreadId,
+        messages: [messageStub],
         title: userQuery,
         timestamp: new Date().toISOString()
       };
-      
+
       setCurrentThread(newThread);
       setThreads(prev => [newThread, ...prev]);
       setIsNewChatActive(false);
     } else {
       const updatedThread = {
         ...currentThread,
-        messages: [...(currentThread.messages || []), {
-          id: tempMessageId,
-          query: userQuery,
-          response: null,
-          timestamp: new Date().toISOString(),
-          isLoading: true
-        }]
+        id: currentThread.id || resolvedThreadId,
+        messages: [...(currentThread.messages || []), messageStub]
       };
       setCurrentThread(updatedThread);
-      setThreads(prev => prev.map(t => t.id === currentThread.id ? updatedThread : t));
+      setThreads(prev => prev.map(thread => thread.id === currentThread.id ? updatedThread : thread));
     }
-    
+
     setQuery('');
     setAgentChain([]);
 
-    try {
-      const response = await executeChatQuery({
-        query: userQuery,
-        thread_id: currentThread?.id || null,
-        agent_chain: currentAgentChain,
-        fetch_ui: true,
-        personalized
-      });
-
-      clearInterval(loadingInterval);
-
-      const savedThreadId = response.data.thread_id || currentThread?.id || `thread-${Date.now()}`;
-      const resolvedMessageId = response.data.message_id || tempMessageId;
-
-      setCurrentThread(prev => {
-        if (!prev) return prev;
-        const updatedMessages = [...(prev.messages || [])];
-        const lastMsgIndex = updatedMessages.length - 1;
-        if (lastMsgIndex >= 0) {
-          updatedMessages[lastMsgIndex] = {
-            ...updatedMessages[lastMsgIndex],
-            id: resolvedMessageId,
-            response: response.data,
-            isLoading: false
-          };
-        }
-        return { ...prev, id: savedThreadId, messages: updatedMessages };
-      });
-      
-      setThreads(prev => prev.map(t => {
-        const containsTempMessage = (t.messages || []).some(m => m.id === tempMessageId);
-        const isTargetThread = t.id === savedThreadId || (currentThread && t.id === currentThread.id) || containsTempMessage;
-        if (!isTargetThread) {
-          return t;
-        }
-
-        const updatedMessages = [...(t.messages || [])].map(msg => {
-          if (msg.id === tempMessageId || msg.id === resolvedMessageId) {
-            return {
-              ...msg,
-              id: resolvedMessageId,
-              response: response.data,
-              isLoading: false
-            };
-          }
-          return msg;
-        });
-
-        return {
-          ...t,
-          id: savedThreadId,
-          messages: updatedMessages,
+    // helper to upsert the message with the latest state payload
+    const upsertFollowUpState = (statePayload) => {
+      const updateThreadWithState = (thread) => {
+        if (!thread) return thread;
+        const messages = [...(thread.messages || [])];
+        const idx = messages.findIndex(m => m.id === tempMessageId);
+        const base = idx >= 0 ? messages[idx] : { id: tempMessageId, query: userQuery };
+        const stateMessage = {
+          ...base,
+          response: base.response || null,
+          followUpState: statePayload,
+          isLoading: true,
           timestamp: new Date().toISOString()
         };
+        if (idx >= 0) messages[idx] = stateMessage; else messages.push(stateMessage);
+        return { ...thread, id: resolvedThreadId, messages, timestamp: new Date().toISOString() };
+      };
+      setCurrentThread(prev => updateThreadWithState(prev));
+      setThreads(prev => prev.map(t => (t.id === (currentThread?.id || resolvedThreadId) ? updateThreadWithState(t) : t)));
+    };
+
+    // helper to toggle loader on the pending message
+    const setPendingMessageLoading = (loading) => {
+      const update = (thread) => {
+        if (!thread) return thread;
+        const messages = [...(thread.messages || [])];
+        const idx = messages.findIndex(m => m.id === tempMessageId);
+        if (idx >= 0) {
+          messages[idx] = { ...messages[idx], isLoading: loading };
+        }
+        return { ...thread, messages };
+      };
+      setCurrentThread(prev => update(prev));
+      setThreads(prev => prev.map(t => (t.id === (currentThread?.id || resolvedThreadId) ? update(t) : t)));
+    };
+
+    // start polling DeepAgents state immediately; keep going even if execute errors
+    let stateAttempts = 0;
+    const maxStateAttempts = 60; // ~600s at 10s interval
+    const stateInterval = setInterval(async () => {
+      stateAttempts += 1;
+      try {
+        const { data: statePayload } = await deepagentState(resolvedThreadId);
+        // detect if meaningful signal exists
+        const hasOutput = Boolean(statePayload?.state?.channels?.output);
+        const hasMessages = Array.isArray(statePayload?.messages) && statePayload.messages.length > 0;
+        const hasPending = Array.isArray(statePayload?.state?.pending_writes) && statePayload.state.pending_writes.length > 0;
+        if (hasOutput || hasMessages || hasPending) {
+          upsertFollowUpState(statePayload);
+        }
+
+        // Append new AI messages (type === 'ai') only if channels.mode key is present
+        const channels = statePayload?.state?.channels;
+        const hasModeKey = channels && Object.prototype.hasOwnProperty.call(channels, 'mode');
+        const channelMsgs = channels?.messages;
+        if (Array.isArray(channelMsgs) && hasModeKey) {
+          for (let i = 0; i < channelMsgs.length; i += 1) {
+            const m = channelMsgs[i];
+            if (m?.type !== 'ai') continue;
+            const mid = m?.id || `idx-${i}`;
+            if (seenStateMsgIdsRef.current.has(mid)) continue;
+
+            let contentStr = '';
+            if (typeof m?.content === 'string') contentStr = m.content;
+            else if (Array.isArray(m?.content)) contentStr = m.content.filter(Boolean).map(String).join('\n\n');
+            else if (m?.content?.text) contentStr = String(m.content.text || '');
+
+            contentStr = contentStr.trim();
+            if (!contentStr) { seenStateMsgIdsRef.current.add(mid); continue; }
+
+            // Deduplicate against the last AI message content
+            const lastMsg = (currentThread?.messages || []).slice(-1)[0];
+            if (lastMsg && !lastMsg.query) {
+              const lastContent = coerceToString(lastMsg?.response?.result ?? lastMsg?.response);
+              if (lastContent && lastContent.trim() === contentStr) {
+                seenStateMsgIdsRef.current.add(mid);
+                continue;
+              }
+            }
+
+            seenStateMsgIdsRef.current.add(mid);
+
+            const interimResponse = {
+              agent_name: statePayload.agent_name || chosenAgent,
+              thread_id: resolvedThreadId,
+              result: contentStr,
+              raw_response: { state: statePayload.state }
+            };
+
+            const appendAi = (thread) => {
+              if (!thread) return thread;
+              const messages = [...(thread.messages || [])];
+              messages.push({
+                id: `ai-${mid}`,
+                query: '',
+                response: interimResponse,
+                timestamp: new Date().toISOString(),
+                isLoading: false
+              });
+              return { ...thread, messages };
+            };
+
+            setCurrentThread(prev => appendAi(prev));
+            setThreads(prev => prev.map(t => (t.id === (currentThread?.id || resolvedThreadId) ? appendAi(t) : t)));
+          }
+        }
+
+        // If final output present, parse it and append as a new AI message
+        if (hasOutput) {
+          const rawOut = statePayload.state.channels.output;
+          let parsedOut = null;
+          if (typeof rawOut === 'string') {
+            try { parsedOut = JSON.parse(rawOut); } catch (_) { parsedOut = { markdown: String(rawOut) }; }
+          } else if (typeof rawOut === 'object') {
+            parsedOut = rawOut;
+          } else {
+            parsedOut = { markdown: String(rawOut) };
+          }
+
+          const uiResponse = {
+            agent_name: statePayload.agent_name || chosenAgent,
+            thread_id: resolvedThreadId,
+            result: parsedOut,
+            sources: Array.isArray(parsedOut?.sources) ? parsedOut.sources : [],
+            raw_response: { state: statePayload.state }
+          };
+
+          const finalContent = coerceToString(uiResponse.result);
+
+          const appendFinal = (thread) => {
+            if (!thread) return thread;
+            const messages = [...(thread.messages || [])];
+            // mark pending loader off
+            const idxPending = messages.findIndex(m => m.id === tempMessageId);
+            if (idxPending >= 0) messages[idxPending] = { ...messages[idxPending], isLoading: false };
+            // de-dup against last AI content
+            const lastMsg = messages.slice(-1)[0];
+            const lastContent = lastMsg && !lastMsg.query ? coerceToString(lastMsg?.response?.result ?? lastMsg?.response) : '';
+            if (!(lastContent && lastContent.trim() === (finalContent || '').trim())) {
+              messages.push({
+                id: `final-${Date.now()}`,
+                query: '',
+                response: uiResponse,
+                timestamp: new Date().toISOString(),
+                isLoading: false
+              });
+            }
+            return { ...thread, id: resolvedThreadId, messages };
+          };
+
+          setCurrentThread(prev => appendFinal(prev));
+          setThreads(prev => prev.map(t => (t.id === (currentThread?.id || resolvedThreadId) ? appendFinal(t) : t)));
+
+          // stop loaders and polling once final output is appended
+          setPendingMessageLoading(false);
+          clearInterval(stateInterval);
+        }
+      } catch (err) {
+        // swallow individual poll errors
+      } finally {
+        if (stateAttempts >= maxStateAttempts) {
+          clearInterval(stateInterval);
+          setPendingMessageLoading(false);
+        }
+      }
+    }, 10000);
+
+    try {
+      const { data } = await deepagentChat({
+        user_query: userQuery,
+        agent_name: chosenAgent,
+        thread_id: resolvedThreadId
+      });
+
+      clearInterval(loadingInterval);
+
+      const returnedThreadId = data.thread_id || resolvedThreadId;
+      const updatedMessage = {
+        id: tempMessageId,
+        query: userQuery,
+        response: data,
+        timestamp: new Date().toISOString(),
+        isLoading: false
+      };
+
+      const updateThreadMessages = (thread) => {
+        if (!thread) return thread;
+        const messages = [...(thread.messages || [])];
+        const lastIndex = messages.findIndex(msg => msg.id === tempMessageId) ?? (messages.length - 1);
+        const indexToUpdate = lastIndex >= 0 ? lastIndex : messages.length - 1;
+        if (indexToUpdate >= 0) {
+          messages[indexToUpdate] = { ...messages[indexToUpdate], ...updatedMessage };
+        } else {
+          messages.push(updatedMessage);
+        }
+        return {
+          ...thread,
+          id: returnedThreadId,
+          messages,
+          title: thread.title || userQuery,
+          timestamp: new Date().toISOString()
+        };
+      };
+
+      setActiveThreadId(returnedThreadId);
+      setCurrentThread(prev => updateThreadMessages(prev));
+      setThreads(prev => prev.map(thread => {
+        if (thread.id === (currentThread?.id || resolvedThreadId)) {
+          return updateThreadMessages(thread);
+        }
+        return thread;
       }));
-      
+
+      // stop state polling once we have a concrete response
+      clearInterval(stateInterval);
     } catch (error) {
       clearInterval(loadingInterval);
-      toast.error('Failed to execute query');
       console.error('Execution error:', error);
+      toast.error('DeepAgents request failed; polling state for updates...');
+      // keep loader on while polling
+      setPendingMessageLoading(true);
+      // do not clear stateInterval here; let it continue polling
     } finally {
+      clearInterval(loadingInterval);
       setIsExecuting(false);
       setLoadingStage(0);
-    }
-  };
-
-  const handleContextMenu = (e, messageId, sectionId) => {
-    e.preventDefault();
-    setContextMenu({
-      x: e.clientX,
-      y: e.clientY,
-      messageId,
-      sectionId
-    });
-  };
-
-  const handleEditOperation = async (operation, instruction = '') => {
-    if (!contextMenu) return;
-    
-    try {
-      await editMessageSection({
-        message_id: contextMenu.messageId,
-        section_id: contextMenu.sectionId,
-        operation,
-        instruction
-      });
-      toast.success(`${operation.charAt(0).toUpperCase() + operation.slice(1)} operation applied`);
-      setContextMenu(null);
-    } catch (error) {
-      toast.error('Failed to apply edit');
     }
   };
 
@@ -315,9 +564,9 @@ export default function ChatInterface({ user }) {
 
   const deleteThread = async (threadId, e) => {
     e.stopPropagation();
-    
+
     if (!window.confirm('Delete this conversation?')) return;
-    
+
     try {
       // Delete from database - delete all messages with this thread_id
       await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/chat/thread/${threadId}`, {
@@ -326,15 +575,16 @@ export default function ChatInterface({ user }) {
           'Authorization': `Bearer ${localStorage.getItem('session_token')}`
         }
       });
-      
+
       // Remove from state
       setThreads(prev => prev.filter(t => t.id !== threadId));
-      
+
       // Clear current thread if it's the one being deleted
       if (currentThread?.id === threadId) {
         setCurrentThread(null);
+        setActiveThreadId(uuidv4());
       }
-      
+
       toast.success('Conversation deleted');
     } catch (error) {
       console.error('Delete error:', error);
@@ -342,19 +592,19 @@ export default function ChatInterface({ user }) {
     }
   };
 
-  const filteredThreads = threads.filter(t => 
+  const filteredThreads = threads.filter(t =>
     t.title?.toLowerCase().includes(searchHistory.toLowerCase())
   );
 
   return (
-    <div className="min-h-screen bg-black flex" onClick={() => setContextMenu(null)}>
+    <div className="min-h-screen bg-black flex">
       {/* Left Sidebar */}
       <aside className={`${sidebarOpen ? 'w-72' : 'w-0'} border-r border-white/10 bg-black/50 backdrop-blur-sm transition-all duration-300 overflow-hidden flex flex-col`}>
         <div className="p-4 border-b border-white/10">
           <div className="flex items-center gap-1 mb-4">
-            <img 
-              src="https://customer-assets.emergentagent.com/job_smart-dispatch-7/artifacts/ghe15bl1_Screenshot%202025-11-05%20at%2011.17.40%20PM.png" 
-              alt="Sagent AI Logo" 
+            <img
+              src="https://customer-assets.emergentagent.com/job_smart-dispatch-7/artifacts/ghe15bl1_Screenshot%202025-11-05%20at%2011.17.40%20PM.png"
+              alt="Sagent AI Logo"
               className="w-8 h-8 object-contain"
             />
             <span className="text-lg font-medium text-white">agent AI</span>
@@ -367,7 +617,7 @@ export default function ChatInterface({ user }) {
             <Plus className="w-4 h-4 mr-2" />
             New Chat
           </Button>
-          
+
           {/* Search History */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
@@ -390,7 +640,10 @@ export default function ChatInterface({ user }) {
                 }`}
               >
                 <button
-                  onClick={() => setCurrentThread(thread)}
+                  onClick={() => {
+                    setCurrentThread(thread);
+                    setActiveThreadId(thread.id);
+                  }}
                   className="w-full text-left p-3"
                   data-testid={`thread-${thread.id}`}
                 >
@@ -404,7 +657,7 @@ export default function ChatInterface({ user }) {
                     </div>
                   </div>
                 </button>
-                
+
                 {/* Delete Button */}
                 <button
                   onClick={(e) => deleteThread(thread.id, e)}
@@ -456,14 +709,14 @@ export default function ChatInterface({ user }) {
           <div className="max-w-4xl mx-auto px-6 py-4 min-h-[calc(100vh-200px)] flex flex-col justify-center">
             {!currentThread ? (
               <div className="text-center">
-                <img 
+                <img
                   src="https://customer-assets.emergentagent.com/job_smart-dispatch-7/artifacts/37zbur7o_Screenshot%202025-11-05%20at%2011.17.40%20PM.png"
                   alt="Sagent AI Logo"
                   className="w-16 h-16 mx-auto mb-4 object-contain"
                 />
                 <h2 className="text-3xl font-bold text-white mb-3">What can I help with?</h2>
                 <p className="text-gray-400 mb-6">Ask a question and let our specialized AI agents research it for you</p>
-                
+
                 {/* Example Prompts - Compact */}
                 <div className="grid md:grid-cols-2 gap-3 max-w-2xl mx-auto">
                   {examplePrompts.map((prompt, i) => (
@@ -479,114 +732,125 @@ export default function ChatInterface({ user }) {
               </div>
             ) : (
               <div className="space-y-8">
-                {(currentThread.messages || []).map((message, msgIndex) => (
-                  <div key={msgIndex} className="space-y-4">
-                    <div>
-                      <h2 className="text-3xl font-bold text-white mb-2">{message.query}</h2>
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <Clock className="w-4 h-4" />
-                        <span>{new Date(message.timestamp).toLocaleString()}</span>
-                      </div>
-                    </div>
+                {(currentThread.messages || []).map((message, msgIndex) => {
+                  const markdownContent = extractMarkdown(message.response);
+                  const plainTextContent = extractPlainText(message.response);
+                  // Thinking subsection removed; follow-up messages are not displayed
 
-                    {message.isLoading && (
-                      <div className="space-y-4 py-6">
-                        <div className="flex items-center gap-3 text-gray-400">
-                          <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
-                          <span className="text-lg">{getLoadingMessages(selectedAgents)[loadingStage].text}</span>
-                        </div>
-                        {loadingStage === 2 && (
-                          <div className="flex gap-2 flex-wrap ml-9">
-                            {selectedAgents.map(agent => (
-                              <span key={agent} className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-lg text-sm text-blue-300 animate-pulse">
-                                {agent}
-                              </span>
-                            ))}
+                  return (
+                    <div key={message.id || msgIndex} className="space-y-4">
+                      <div>
+                        {message.query ? (
+                          <>
+                            <h2 className="text-3xl font-bold text-white mb-2">{message.query}</h2>
+                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                              <Clock className="w-4 h-4" />
+                              <span>{new Date(message.timestamp).toLocaleString()}</span>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex items-center gap-2 text-sm text-gray-500">
+                            <Clock className="w-4 h-4" />
+                            <span>{new Date(message.timestamp).toLocaleString()}</span>
                           </div>
                         )}
                       </div>
-                    )}
 
-                    {!message.isLoading && message.response && (
-                      <div className="space-y-6">
-                        <div 
-                          className="prose prose-lg prose-invert max-w-none"
-                          onContextMenu={(e) => handleContextMenu(e, message.id, 'answer')}
-                        >
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex flex-col gap-1">
-                              <div className="text-xs text-gray-500 uppercase tracking-wider">Answer</div>
-                              {extractAgentName(message.response) && (
-                                <div className="text-xs text-gray-600">Agent: {extractAgentName(message.response)}</div>
-                              )}
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => copyToClipboard(extractMarkdown(message.response))}
-                                className="text-gray-400 hover:text-white h-7"
-                              >
-                                <Copy className="w-3.5 h-3.5" />
-                              </Button>
-                            </div>
+                      {message.isLoading && (
+                        <div className="space-y-4 py-6">
+                          <div className="flex items-center gap-3 text-gray-400">
+                            <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
+                            <span className="text-lg">{getLoadingMessages(selectedAgents)[loadingStage].text}</span>
                           </div>
-                          {extractMarkdown(message.response) ? (
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                              {extractMarkdown(message.response)}
-                            </ReactMarkdown>
-                          ) : (
-                            <div className="text-gray-300 leading-relaxed">
-                              {message.response?.results?.map((result, i) => (
-                                <div key={i} className="mb-4">
-                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{result.content}</ReactMarkdown>
-                                </div>
+                          {loadingStage === 2 && (
+                            <div className="flex gap-2 flex-wrap ml-9">
+                              {selectedAgents.map(agent => (
+                                <span key={agent} className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-lg text-sm text-blue-300 animate-pulse">
+                                  {agent}
+                                </span>
                               ))}
                             </div>
                           )}
                         </div>
+                      )}
 
-                        {extractSources(message.response).length > 0 && (
-                          <div className="bg-white/5 border border-white/10 rounded-lg p-4 space-y-2">
-                            <div className="text-xs text-gray-500 uppercase tracking-wider">Sources</div>
-                            <ul className="space-y-2">
-                              {extractSources(message.response).map((source, index) => (
-                                <li key={source.id || source.url || index} className="text-sm text-gray-300">
-                                  {source.title ? <span className="font-medium text-white">{source.title}</span> : null}
-                                  {source.publisher ? <span className="text-gray-500 ml-2">({source.publisher})</span> : null}
-                                  {source.date ? <span className="text-gray-500 ml-2">{source.date}</span> : null}
-                                  {source.url && (
-                                    <div>
-                                      <a href={source.url} target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300 break-all">
-                                        {source.url}
-                                      </a>
-                                    </div>
-                                  )}
-                                </li>
+                      {/* Thinking subsection removed */}
+
+                      {message.response && (
+                        <div className="space-y-6">
+                          <div className="prose prose-lg prose-invert max-w-none">
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="flex flex-col gap-1">
+                                <div className="text-xs text-gray-500 uppercase tracking-wider">Answer</div>
+                                {extractAgentName(message.response) && (
+                                  <div className="text-xs text-gray-600">Agent: {extractAgentName(message.response)}</div>
+                                )}
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => copyToClipboard(markdownContent || plainTextContent)}
+                                  className="text-gray-400 hover:text-white h-7"
+                                  disabled={!markdownContent && !plainTextContent}
+                                >
+                                  <Copy className="w-3.5 h-3.5" />
+                                </Button>
+                              </div>
+                            </div>
+                            {markdownContent ? (
+                              <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                                {markdownContent}
+                              </ReactMarkdown>
+                            ) : (
+                              <div className="text-gray-300 leading-relaxed whitespace-pre-wrap">
+                                {plainTextContent || 'No content returned from agent.'}
+                              </div>
+                            )}
+                          </div>
+
+                          {extractSources(message.response).length > 0 && (
+                            <div className="bg-white/5 border border-white/10 rounded-lg p-4 space-y-2">
+                              <div className="text-xs text-gray-500 uppercase tracking-wider">Sources</div>
+                              <ul className="space-y-2">
+                                {extractSources(message.response).map((source, index) => (
+                                  <li key={source.id || source.url || index} className="text-sm text-gray-300">
+                                    {source.title ? <span className="font-medium text-white">{source.title}</span> : null}
+                                    {source.publisher ? <span className="text-gray-500 ml-2">({source.publisher})</span> : null}
+                                    {source.date ? <span className="text-gray-500 ml-2">{source.date}</span> : null}
+                                    {source.url && (
+                                      <div>
+                                        <a href={source.url} target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300 break-all">
+                                          {source.url}
+                                        </a>
+                                      </div>
+                                    )}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {/* Suggested Follow-ups */}
+                          {msgIndex === (currentThread.messages?.length || 0) - 1 && (
+                            <div className="flex gap-2 flex-wrap">
+                              <span className="text-xs text-gray-500">Suggested:</span>
+                              {['Tell me more', 'Give examples', 'Explain in detail'].map(suggestion => (
+                                <button
+                                  key={suggestion}
+                                  onClick={() => setQuery(suggestion)}
+                                  className="text-xs px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
+                                >
+                                  {suggestion}
+                                </button>
                               ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {/* Suggested Follow-ups */}
-                        {msgIndex === (currentThread.messages?.length || 0) - 1 && (
-                          <div className="flex gap-2 flex-wrap">
-                            <span className="text-xs text-gray-500">Suggested:</span>
-                            {['Tell me more', 'Give examples', 'Explain in detail'].map(suggestion => (
-                              <button
-                                key={suggestion}
-                                onClick={() => setQuery(suggestion)}
-                                className="text-xs px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
-                              >
-                                {suggestion}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
                 <div ref={chatEndRef} />
               </div>
             )}
@@ -641,37 +905,6 @@ export default function ChatInterface({ user }) {
           </div>
         </div>
       </div>
-
-      {/* Context Menu for Edit Operations */}
-      {contextMenu && (
-        <div
-          className="fixed z-50 bg-black/95 backdrop-blur-xl border border-white/20 rounded-xl shadow-2xl overflow-hidden"
-          style={{ top: contextMenu.y, left: contextMenu.x }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            onClick={() => handleEditOperation('iterate', prompt('Enter your instruction:'))}
-            className="w-full px-4 py-3 text-left text-sm text-white hover:bg-white/10 transition-colors flex items-center gap-3"
-          >
-            <Edit2 className="w-4 h-4" />
-            <span>Iterate</span>
-          </button>
-          <button
-            onClick={() => handleEditOperation('delete')}
-            className="w-full px-4 py-3 text-left text-sm text-white hover:bg-white/10 transition-colors flex items-center gap-3"
-          >
-            <X className="w-4 h-4" />
-            <span>Delete</span>
-          </button>
-          <button
-            onClick={() => handleEditOperation('dissolve')}
-            className="w-full px-4 py-3 text-left text-sm text-white hover:bg-white/10 transition-colors flex items-center gap-3"
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>Dissolve</span>
-          </button>
-        </div>
-      )}
     </div>
   );
 }
