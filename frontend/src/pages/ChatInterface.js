@@ -99,6 +99,32 @@ const extractProviders = (response) => {
   
   const providers = new Set();
   
+  // Extract providers from sources array
+  const sources = extractSources(response);
+  sources.forEach(source => {
+    // Check if source has provider field
+    if (source.provider) {
+      providers.add(source.provider);
+    }
+    
+    // Also check if source is a string with "provider: xxx" pattern
+    if (typeof source === 'string') {
+      const providerMatch = source.match(/,\s*provider:\s*(\w+)/i);
+      if (providerMatch && providerMatch[1]) {
+        providers.add(providerMatch[1]);
+      }
+    }
+    
+    // Check if source has a text/content field with provider pattern
+    const sourceText = source.text || source.content || source.citation || '';
+    if (sourceText) {
+      const providerMatch = sourceText.match(/,\s*provider:\s*(\w+)/i);
+      if (providerMatch && providerMatch[1]) {
+        providers.add(providerMatch[1]);
+      }
+    }
+  });
+  
   // Check top-level provider field
   if (response.provider) {
     providers.add(response.provider);
