@@ -15,7 +15,7 @@ import httpx
 from models import (
     WaitlistEntry, WaitlistCreate, User, UserSession,
     Agent, UserAgent, ChatQuery, ChatMessage, ChatExecuteRequest,
-    EditOperation, AnalyticsEntry, UserCredits, SessionDataResponse
+    AnalyticsEntry, UserCredits, SessionDataResponse
 )
 from agent_orchestrator import AgentOrchestrator
 
@@ -77,51 +77,11 @@ async def get_current_user(authorization: Optional[str] = None, session_token_co
 async def call_deepagents(agent_name: str, user_query: str, thread_id: str) -> Dict[str, Any]:
     """Invoke DeepAgents chat endpoint and return JSON payload."""
     payload = {
-        "agent_name": agent_name or DEEPAGENTS_DEFAULT_AGENT,
+        "agent_name": agent_name,
         "user_query": user_query,
-        "thread_id": thread_id
+        "thread_id": thread_id,
     }
-    url = f"{DEEPAGENTS_URL.rstrip('/')}/api/v1/chat"
-    try:
-        async with httpx.AsyncClient(timeout=DEEPAGENTS_TIMEOUT) as client:
-            response = await client.post(url, json=payload)
-            response.raise_for_status()
-            return response.json()
-    except httpx.HTTPStatusError as exc:
-        logger.error("DeepAgents responded with error: %s", exc)
-        raise HTTPException(status_code=502, detail="DeepAgents service error") from exc
-    except httpx.RequestError as exc:
-        logger.error("Failed to reach DeepAgents: %s", exc)
-        raise HTTPException(status_code=502, detail="DeepAgents service unavailable") from exc
-
-
-def normalize_deepagents_response(agent_payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Normalize DeepAgents payload for frontend consumption."""
-    result = agent_payload.get("result")
-    markdown = None
-    summary = ""
-
-    if isinstance(result, dict):
-        markdown = result.get("report") or result.get("markdown") or result.get("result")
-        summary = result.get("summary") or ""
-    elif isinstance(result, str):
-        markdown = result
-
-    normalized = {
-        "agent_name": agent_payload.get("agent_name", DEEPAGENTS_DEFAULT_AGENT),
-        "thread_id": agent_payload.get("thread_id"),
-        "result": result,
-        "sources": agent_payload.get("source", []),
-        "raw_response": agent_payload
-    }
-
-    if markdown:
-        normalized["synthesized"] = {
-            "markdown": markdown,
-            "summary": summary
-        }
-
-    return normalized
+    return await orchestrator.send_chat(payload)
 
 
 # ===== WAITLIST ENDPOINTS =====
@@ -332,42 +292,18 @@ async def preview_agent_chain(
     authorization: Optional[str] = Header(None),
     session_token: Optional[str] = Header(None)
 ):
-    """Preview agent chain for a query (called as user types)"""
-    user = await get_current_user(authorization, session_token)
-    user_id = user.id if user else "demo-user-123"
-    
-    # Get user's subscribed agents if authenticated
-    subscribed_agents = []
-    if user:
-        user_agents = await db.user_agents.find({"user_id": user_id}, {"_id": 0}).to_list(100)
-        agent_ids = [ua["agent_id"] for ua in user_agents]
-        subscribed_agents = await db.agents.find({"id": {"$in": agent_ids}}, {"_id": 0}).to_list(100)
-    
-    # Attempt to delegate preview routing to DeepAgents smart router
-    preview_agent_chain = []
-    try:
-        preview_thread_id = f"preview-{uuid.uuid4()}"
-        deepagents_preview = await call_deepagents(
-            DEEPAGENTS_DEFAULT_AGENT,
-            query.query,
-            preview_thread_id
-        )
-        agent_name = deepagents_preview.get("agent_name", DEEPAGENTS_DEFAULT_AGENT)
-        preview_agent_chain.append({
-            "agent_id": agent_name,
-            "agent_name": agent_name,
-            "purpose": "Predicted by DeepAgents smart router"
-        })
-    except HTTPException:
-        # Fallback to local orchestrator routing if DeepAgents is unavailable
-        agent_chain = await orchestrator.decompose_query(
-            query.query,
-            subscribed_agents,
-            query.personalized and user is not None
-        )
-        preview_agent_chain = agent_chain
-    
-    return {"agent_chain": preview_agent_chain}
+    """Preview agent chain for a query (called as user types)."""
+    _ = await get_current_user(authorization, session_token)
+
+    return {
+        "agent_chain": [
+            {
+                "agent_id": DEEPAGENTS_DEFAULT_AGENT,
+                "agent_name": DEEPAGENTS_DEFAULT_AGENT,
+                "purpose": "Routed via DeepAgents smart router",
+            }
+        ]
+    }
 
 @api_router.post("/chat/execute")
 async def execute_chat_query(
@@ -375,99 +311,57 @@ async def execute_chat_query(
     authorization: Optional[str] = Header(None),
     session_token: Optional[str] = Header(None)
 ):
-    """Execute query with agent chain"""
+    """Execute query via DeepAgents and persist a minimal chat record."""
     user = await get_current_user(authorization, session_token)
-    
-    # For development: use demo user if not authenticated
     user_id = user.id if user else "demo-user-123"
-    
-    # Decide which agent to invoke; prefer user-selected, fallback to smart router
-    selected_agent_name = DEEPAGENTS_DEFAULT_AGENT
-    if request.agent_chain:
-        selected_agent = request.agent_chain[0]
-        selected_agent_name = selected_agent.get("agent_id") or selected_agent.get("agent_name") or DEEPAGENTS_DEFAULT_AGENT
 
-    deepagents_thread_id = request.thread_id or f"thread-{uuid.uuid4()}"
+    resolved_thread_id = request.thread_id or str(uuid.uuid4())
+    resolved_agent = request.agent_name or DEEPAGENTS_DEFAULT_AGENT
 
-    # Try to call DeepAgents, fallback to local orchestrator if unavailable
     try:
         agent_payload = await call_deepagents(
-            selected_agent_name,
-            request.query,
-            deepagents_thread_id
+            resolved_agent,
+            request.user_query,
+            resolved_thread_id,
         )
+    except httpx.HTTPStatusError as exc:
+        logger.error("DeepAgents responded with error: %s", exc)
+        raise HTTPException(status_code=exc.response.status_code, detail="DeepAgents service error") from exc
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Failed to reach DeepAgents: %s", exc)
+        raise HTTPException(status_code=502, detail="DeepAgents service unavailable") from exc
 
-        normalized_response = normalize_deepagents_response(agent_payload)
-        actual_agent_name = normalized_response.get("agent_name", selected_agent_name)
+    agent_payload.setdefault("thread_id", resolved_thread_id)
+    agent_payload.setdefault("agent_name", resolved_agent)
+    agent_payload.setdefault("user_query", request.user_query)
 
-        result = {
-            "agent_name": actual_agent_name,
-            "thread_id": normalized_response.get("thread_id", deepagents_thread_id),
-            "result": normalized_response.get("result"),
-            "sources": normalized_response.get("sources", []),
-            "synthesized": normalized_response.get("synthesized"),
-            "raw_response": normalized_response.get("raw_response")
-        }
-    except HTTPException:
-        # Fallback to local orchestrator
-        logger.warning("DeepAgents unavailable, using local orchestrator")
-        fallback_result = await orchestrator.execute_agent_chain(
-            request.query,
-            request.agent_chain,
-            request.fetch_ui
-        )
-        result = {
-            **fallback_result,
-            "thread_id": deepagents_thread_id,
-            "agent_name": selected_agent_name
-        }
-    
-    # Save to chat history
     chat_message = ChatMessage(
         user_id=user_id,
-        thread_id=result["thread_id"],
-        query=request.query,
-        agent_chain=[{
-            "agent_id": result.get("agent_name", selected_agent_name),
-            "agent_name": result.get("agent_name", selected_agent_name),
-            "purpose": "Processed via DeepAgents" if result.get("raw_response") else "Processed locally"
-        }],
-        response=result,
-        fetch_ui=request.fetch_ui,
-        personalized=request.personalized
+        thread_id=agent_payload["thread_id"],
+        query=request.user_query,
+        agent_chain=[
+            {
+                "agent_id": agent_payload["agent_name"],
+                "agent_name": agent_payload["agent_name"],
+                "purpose": "Processed via DeepAgents",
+            }
+        ],
+        response=agent_payload,
+        fetch_ui=False,
+        personalized=False,
     )
-    
-    doc = chat_message.model_dump()
-    doc['timestamp'] = doc['timestamp'].isoformat()
-    await db.chat_history.insert_one(doc)
-    
-    # Record analytics
-    # Log analytics for the resolved DeepAgents agent
-    agent_id = result.get("agent_name", selected_agent_name)
-    agent_name = result.get("agent_name", selected_agent_name)
-        
-    agent = await db.agents.find_one({"id": agent_id}) or await db.agents.find_one({"name": agent_name})
-    if agent:
-        analytics = AnalyticsEntry(
-            user_id=user_id,
-            agent_id=agent.get("id", agent_id),
-            agent_name=agent_name,
-            tokens_used=500,
-            cost=agent.get("cost_per_query", 0.01)
-        )
-        analytics_doc = analytics.model_dump()
-        analytics_doc['timestamp'] = analytics_doc['timestamp'].isoformat()
-        await db.analytics.insert_one(analytics_doc)
-        
-        # Update user credits if authenticated
-        if user:
-            await db.user_credits.update_one(
-                {"user_id": user_id},
-                {"$inc": {"used_credits": agent.get("cost_per_query", 0.01)}}
-            )
-    
-    # Return result with thread_id so frontend can track it
-    return {**result, "thread_id": chat_message.thread_id, "message_id": chat_message.id}
+
+    record = chat_message.model_dump()
+    record["timestamp"] = record["timestamp"].isoformat()
+    await db.chat_history.insert_one(record)
+
+    return {
+        "thread_id": agent_payload["thread_id"],
+        "agent_name": agent_payload["agent_name"],
+        "result": agent_payload.get("result"),
+        "sources": agent_payload.get("source", []),
+        "raw_response": agent_payload,
+    }
 
 @api_router.get("/chat/history", response_model=List[ChatMessage])
 async def get_chat_history(
@@ -475,77 +369,31 @@ async def get_chat_history(
     session_token: Optional[str] = Header(None),
     limit: int = 50
 ):
-    """Get user's chat history"""
+    """Get user's chat history."""
     user = await get_current_user(authorization, session_token)
     user_id = user.id if user else "demo-user-123"
-    
+
     messages = await db.chat_history.find(
         {"user_id": user_id},
         {"_id": 0}
     ).sort("timestamp", -1).limit(limit).to_list(limit)
-    
+
     for msg in messages:
-        if isinstance(msg['timestamp'], str):
-            msg['timestamp'] = datetime.fromisoformat(msg['timestamp'])
-    
+        if isinstance(msg["timestamp"], str):
+            msg["timestamp"] = datetime.fromisoformat(msg["timestamp"])
+
     return messages
-
-@api_router.post("/chat/edit")
-async def edit_message_section(
-    edit: EditOperation,
-    authorization: Optional[str] = Header(None),
-    session_token: Optional[str] = Header(None)
-):
-    """Apply edit operation (iterate/delete/dissolve) on message section"""
-    user = await get_current_user(authorization, session_token)
-    if not user:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    
-    # Get original message
-    message = await db.chat_history.find_one({"id": edit.message_id, "user_id": user.id})
-    if not message:
-        raise HTTPException(status_code=404, detail="Message not found")
-    
-    # Apply edit operation against the stored content or fallback to raw payload
-    original_response = message["response"]
-    editable_payload = original_response
-    if isinstance(original_response, dict) and original_response.get("raw_response"):
-        editable_payload = original_response["raw_response"]
-
-    updated_response_raw = await orchestrator.apply_edit_operation(
-        editable_payload,
-        edit.section_id,
-        edit.operation,
-        edit.instruction
-    )
-
-    if isinstance(original_response, dict) and original_response.get("raw_response"):
-        normalized_updated = normalize_deepagents_response(updated_response_raw) if isinstance(updated_response_raw, dict) else original_response
-    else:
-        normalized_updated = updated_response_raw
-    
-    # Update message
-    await db.chat_history.update_one(
-        {"id": edit.message_id},
-        {"$set": {"response": normalized_updated}}
-    )
-    
-    return {"response": normalized_updated}
 
 @api_router.get("/chat/state/{thread_id}")
 async def get_chat_state(thread_id: str):
-    """Poll for background process/thinking steps for a thread"""
+    """Poll for background process/thinking steps for a thread."""
     try:
-        # Call DeepAgents state endpoint
-        url = f"{DEEPAGENTS_URL.rstrip('/')}/api/v1/state/{thread_id}"
-        async with httpx.AsyncClient(timeout=5) as client:
-            response = await client.get(url)
-            if response.status_code == 200:
-                return response.json()
-            else:
-                return {"status": "unknown", "thinking_steps": []}
-    except Exception as e:
-        logger.error(f"Error polling state: {e}")
+        return await orchestrator.get_state(thread_id)
+    except httpx.HTTPStatusError as exc:
+        logger.error("DeepAgents state error: %s", exc)
+        raise HTTPException(status_code=exc.response.status_code, detail="DeepAgents state error") from exc
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Error polling state: %s", exc)
         return {"status": "unknown", "thinking_steps": []}
 
 @api_router.delete("/chat/thread/{thread_id}")

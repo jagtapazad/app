@@ -82,9 +82,9 @@ class ChatMessage(BaseModel):
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class ChatExecuteRequest(BaseModel):
-    query: str
+    user_query: str
+    agent_name: str = "smart_router"
     thread_id: Optional[str] = None
-    agent_chain: List[Dict[str, Any]]
     fetch_ui: bool = False
     personalized: bool = False
 
