@@ -28,7 +28,7 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 # DeepAgents configuration
-DEEPAGENTS_URL = os.environ.get("DEEPAGENTS_URL", "http://34.247.74.22:8000")
+DEEPAGENTS_URL = os.environ.get("DEEPAGENTS_URL", "http://108.130.44.215:8000")
 DEEPAGENTS_DEFAULT_AGENT = os.environ.get("DEEPAGENTS_DEFAULT_AGENT", "smart_router")
 DEEPAGENTS_TIMEOUT = int(os.environ.get("DEEPAGENTS_TIMEOUT", "5000"))
 
