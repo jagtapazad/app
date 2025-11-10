@@ -1,0 +1,96 @@
+{
+  "passed": [
+    {
+      "test": "MongoDB Connection",
+      "message": "Successfully retrieved 15 default agents from database",
+      "details": null,
+      "timestamp": "2025-11-10T21:23:31.113294"
+    },
+    {
+      "test": "GET /api/agents/public",
+      "message": "Successfully retrieved 15 agents with correct structure",
+      "details": null,
+      "timestamp": "2025-11-10T21:23:31.155246"
+    },
+    {
+      "test": "GET /api/agents",
+      "message": "Successfully retrieved 15 agents without authentication",
+      "details": null,
+      "timestamp": "2025-11-10T21:23:31.193361"
+    },
+    {
+      "test": "GET /api/chat/history",
+      "message": "Successfully retrieved chat history with 1 messages",
+      "details": null,
+      "timestamp": "2025-11-10T21:23:31.237968"
+    },
+    {
+      "test": "POST /api/waitlist",
+      "message": "Successfully created waitlist entry for test_11a8abe8@example.com",
+      "details": null,
+      "timestamp": "2025-11-10T21:23:31.302511"
+    },
+    {
+      "test": "POST /api/waitlist - Duplicate Check",
+      "message": "Correctly rejected duplicate email",
+      "details": null,
+      "timestamp": "2025-11-10T21:23:31.342193"
+    },
+    {
+      "test": "GET /api/admin/waitlist",
+      "message": "Successfully retrieved 1 waitlist entries",
+      "details": null,
+      "timestamp": "2025-11-10T21:23:31.383228"
+    },
+    {
+      "test": "POST /api/admin/waitlist/{id}/approve",
+      "message": "Successfully approved waitlist entry e6b12196-eb92-4675-9359-f81a010910df",
+      "details": null,
+      "timestamp": "2025-11-10T21:23:31.421448"
+    },
+    {
+      "test": "GET /api/auth/me - No Auth",
+      "message": "Correctly returned 401 for unauthenticated request",
+      "details": null,
+      "timestamp": "2025-11-10T21:23:31.464097"
+    },
+    {
+      "test": "POST /api/chat/preview",
+      "message": "Successfully retrieved agent chain preview",
+      "details": null,
+      "timestamp": "2025-11-10T21:23:31.541297"
+    },
+    {
+      "test": "POST /api/chat/execute",
+      "message": "Successfully executed chat query via DeepAgents",
+      "details": null,
+      "timestamp": "2025-11-10T21:23:39.796817"
+    },
+    {
+      "test": "GET /api/analytics",
+      "message": "Successfully retrieved analytics data",
+      "details": null,
+      "timestamp": "2025-11-10T21:23:39.866171"
+    },
+    {
+      "test": "POST /api/agents/{id}/subscribe - No Auth",
+      "message": "Correctly returned 401 for unauthenticated subscription request",
+      "details": null,
+      "timestamp": "2025-11-10T21:23:39.983829"
+    },
+    {
+      "test": "GET /api/agents/subscribed - No Auth",
+      "message": "Correctly returned 401 for unauthenticated request",
+      "details": null,
+      "timestamp": "2025-11-10T21:23:40.023048"
+    }
+  ],
+  "failed": [],
+  "warnings": [
+    {
+      "test": "POST /api/auth/session-data",
+      "message": "Skipped - requires external Emergent OAuth service",
+      "timestamp": "2025-11-10T21:23:31.464126"
+    }
+  ]
+}
