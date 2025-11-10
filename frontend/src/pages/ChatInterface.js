@@ -93,6 +93,52 @@ const extractPlainText = (response) => {
   return coerceToString(primary);
 };
 
+// Extract unique providers/tools used from the response
+const extractProviders = (response) => {
+  if (!response) return [];
+  
+  const providers = new Set();
+  
+  // Check top-level provider field
+  if (response.provider) {
+    providers.add(response.provider);
+  }
+  
+  // Check raw_response.provider
+  if (response.raw_response?.provider) {
+    providers.add(response.raw_response.provider);
+  }
+  
+  // Check tools array
+  if (Array.isArray(response.tools)) {
+    response.tools.forEach(tool => {
+      if (typeof tool === 'string') providers.add(tool);
+      else if (tool?.name) providers.add(tool.name);
+      else if (tool?.provider) providers.add(tool.provider);
+    });
+  }
+  
+  // Check raw_response.tools
+  if (Array.isArray(response.raw_response?.tools)) {
+    response.raw_response.tools.forEach(tool => {
+      if (typeof tool === 'string') providers.add(tool);
+      else if (tool?.name) providers.add(tool.name);
+      else if (tool?.provider) providers.add(tool.provider);
+    });
+  }
+  
+  // Check tools_used array
+  if (Array.isArray(response.tools_used)) {
+    response.tools_used.forEach(tool => providers.add(tool));
+  }
+  
+  if (Array.isArray(response.raw_response?.tools_used)) {
+    response.raw_response.tools_used.forEach(tool => providers.add(tool));
+  }
+  
+  return Array.from(providers).filter(Boolean);
+};
+
 const extractFollowUpMessages = (statePayload) => {
   if (!statePayload) return [];
 
