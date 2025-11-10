@@ -21,6 +21,24 @@ export default function Marketplace({ user }) {
     loadSubscribed();
   }, []);
 
+  const agentLinks = {
+    'scira_ai': 'https://api.scira.ai/docs',
+    'gpt_researcher': 'https://gptr.dev/',
+    'deerflow': 'https://github.com/bytedance/deer-flow',
+    'linkup': 'https://app.linkup.so/playground',
+    'abacus_ai': 'https://abacus.ai/app/route-llm-apis',
+    'octagon_ai': 'https://docs.octagonagents.com/guide/rest-api/',
+    'perplexity': 'https://www.perplexity.ai/',
+    'exa': 'https://exa.ai/',
+    'answerthis': 'https://answerthis.io/',
+    'parallel_ai': 'https://docs.parallel.ai/',
+    'morphic': 'https://github.com/18CH10007/morphic?tab=readme-ov-file#morphic',
+    'openai_research': 'https://cobusgreyling.medium.com/openai-api-deep-research-17ceca9a9a51',
+    'nebius': 'https://github.com/Arindam200/awesome-ai-apps/tree/main/advance_ai_agents/deep_researcher_agent',
+    'clado_ai': '#',
+    'appoloi': '#'
+  };
+
   const loadAgents = async () => {
     try {
       // Try authenticated endpoint first, fallback to public
@@ -157,9 +175,12 @@ export default function Marketplace({ user }) {
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredAgents.map(agent => (
-              <div 
-                key={agent.id} 
-                className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all"
+              <a
+                key={agent.id}
+                href={agentLinks[agent.id] || '#'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer block"
                 data-testid={`agent-card-${agent.id}`}
               >
                 <div className="flex items-start justify-between mb-4">
@@ -189,7 +210,7 @@ export default function Marketplace({ user }) {
                   <span className="text-gray-500">Cost per query: </span>
                   <span className="text-white font-medium">${agent.cost_per_query.toFixed(3)}</span>
                 </div>
-              </div>
+              </a>
             ))}
           </div>
         )}

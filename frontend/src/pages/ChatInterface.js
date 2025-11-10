@@ -606,18 +606,8 @@ export default function ChatInterface({ user }) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-black/95 border-white/20">
-                    <SelectItem value="quick" className="text-white hover:bg-white/10">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-green-400"></div>
-                        <span>Quick</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="detailed" className="text-white hover:bg-white/10">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-blue-400"></div>
-                        <span>Detailed</span>
-                      </div>
-                    </SelectItem>
+                    <SelectItem value="quick" className="text-white hover:bg-white/10">Quick</SelectItem>
+                    <SelectItem value="detailed" className="text-white hover:bg-white/10">Detailed</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

@@ -28,7 +28,7 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 # DeepAgents configuration
-DEEPAGENTS_URL = os.environ.get("DEEPAGENTS_URL", "http://localhost:8000")
+DEEPAGENTS_URL = os.environ.get("DEEPAGENTS_URL", "http://34.247.74.22:8000")
 DEEPAGENTS_DEFAULT_AGENT = os.environ.get("DEEPAGENTS_DEFAULT_AGENT", "smart_router")
 DEEPAGENTS_TIMEOUT = int(os.environ.get("DEEPAGENTS_TIMEOUT", "5000"))
 
@@ -389,23 +389,38 @@ async def execute_chat_query(
 
     deepagents_thread_id = request.thread_id or f"thread-{uuid.uuid4()}"
 
-    agent_payload = await call_deepagents(
-        selected_agent_name,
-        request.query,
-        deepagents_thread_id
-    )
+    # Try to call DeepAgents, fallback to local orchestrator if unavailable
+    try:
+        agent_payload = await call_deepagents(
+            selected_agent_name,
+            request.query,
+            deepagents_thread_id
+        )
 
-    normalized_response = normalize_deepagents_response(agent_payload)
-    actual_agent_name = normalized_response.get("agent_name", selected_agent_name)
+        normalized_response = normalize_deepagents_response(agent_payload)
+        actual_agent_name = normalized_response.get("agent_name", selected_agent_name)
 
-    result = {
-        "agent_name": actual_agent_name,
-        "thread_id": normalized_response.get("thread_id", deepagents_thread_id),
-        "result": normalized_response.get("result"),
-        "sources": normalized_response.get("sources", []),
-        "synthesized": normalized_response.get("synthesized"),
-        "raw_response": normalized_response.get("raw_response")
-    }
+        result = {
+            "agent_name": actual_agent_name,
+            "thread_id": normalized_response.get("thread_id", deepagents_thread_id),
+            "result": normalized_response.get("result"),
+            "sources": normalized_response.get("sources", []),
+            "synthesized": normalized_response.get("synthesized"),
+            "raw_response": normalized_response.get("raw_response")
+        }
+    except HTTPException:
+        # Fallback to local orchestrator
+        logger.warning("DeepAgents unavailable, using local orchestrator")
+        fallback_result = await orchestrator.execute_agent_chain(
+            request.query,
+            request.agent_chain,
+            request.fetch_ui
+        )
+        result = {
+            **fallback_result,
+            "thread_id": deepagents_thread_id,
+            "agent_name": selected_agent_name
+        }
     
     # Save to chat history
     chat_message = ChatMessage(
@@ -413,9 +428,9 @@ async def execute_chat_query(
         thread_id=result["thread_id"],
         query=request.query,
         agent_chain=[{
-            "agent_id": actual_agent_name,
-            "agent_name": actual_agent_name,
-            "purpose": "Processed via DeepAgents"
+            "agent_id": result.get("agent_name", selected_agent_name),
+            "agent_name": result.get("agent_name", selected_agent_name),
+            "purpose": "Processed via DeepAgents" if result.get("raw_response") else "Processed locally"
         }],
         response=result,
         fetch_ui=request.fetch_ui,
@@ -428,8 +443,8 @@ async def execute_chat_query(
     
     # Record analytics
     # Log analytics for the resolved DeepAgents agent
-    agent_id = actual_agent_name
-    agent_name = actual_agent_name
+    agent_id = result.get("agent_name", selected_agent_name)
+    agent_name = result.get("agent_name", selected_agent_name)
         
     agent = await db.agents.find_one({"id": agent_id}) or await db.agents.find_one({"name": agent_name})
     if agent:
@@ -516,6 +531,22 @@ async def edit_message_section(
     )
     
     return {"response": normalized_updated}
+
+@api_router.get("/chat/state/{thread_id}")
+async def get_chat_state(thread_id: str):
+    """Poll for background process/thinking steps for a thread"""
+    try:
+        # Call DeepAgents state endpoint
+        url = f"{DEEPAGENTS_URL.rstrip('/')}/api/v1/state/{thread_id}"
+        async with httpx.AsyncClient(timeout=5) as client:
+            response = await client.get(url)
+            if response.status_code == 200:
+                return response.json()
+            else:
+                return {"status": "unknown", "thinking_steps": []}
+    except Exception as e:
+        logger.error(f"Error polling state: {e}")
+        return {"status": "unknown", "thinking_steps": []}
 
 @api_router.delete("/chat/thread/{thread_id}")
 async def delete_thread(
