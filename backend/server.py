@@ -99,9 +99,9 @@ async def create_waitlist_entry(entry: WaitlistCreate):
     return waitlist_obj
 
 @api_router.get("/admin/waitlist", response_model=List[WaitlistEntry])
-async def get_waitlist():
+async def get_waitlist(limit: int = 100, skip: int = 0):
     """Get all waitlist entries (admin only - add auth later)"""
-    entries = await db.waitlist.find({}, {"_id": 0}).to_list(1000)
+    entries = await db.waitlist.find({}, {"_id": 0}).sort("timestamp", -1).skip(skip).limit(limit).to_list(limit)
 
     for entry in entries:
         if isinstance(entry['timestamp'], str):
