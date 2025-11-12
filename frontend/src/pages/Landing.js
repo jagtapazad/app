@@ -207,19 +207,19 @@ export default function Landing() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
             <div className="p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl">
               <div className="text-4xl font-bold text-white mb-2">30+</div>
-              <div className="text-sm text-gray-400">Context Handling</div>
+              <div className="text-sm text-gray-400">Specialized Top AI Agents</div>
             </div>
             <div className="p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl">
-              <div className="text-4xl font-bold text-green-400 mb-2">↓60%</div>
-              <div className="text-sm text-gray-400">TAT</div>
+              <div className="text-4xl font-bold text-green-400 mb-2">↓20%</div>
+              <div className="text-sm text-gray-400">Reduction in Reprompting</div>
             </div>
             <div className="p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl">
-              <div className="text-4xl font-bold text-blue-400 mb-2">80%</div>
-              <div className="text-sm text-gray-400">Increased Precision</div>
+              <div className="text-4xl font-bold text-blue-400 mb-2">✓</div>
+              <div className="text-sm text-gray-400">Top-Tier Precision — Benchmarked against Perplexity & OpenAI</div>
             </div>
             <div className="p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl">
-              <div className="text-4xl font-bold text-purple-400 mb-2">40%</div>
-              <div className="text-sm text-gray-400">Platform Retention</div>
+              <div className="text-4xl font-bold text-purple-400 mb-2">∞</div>
+              <div className="text-sm text-gray-400">Ask Any Subject</div>
             </div>
           </div>
         </div>
