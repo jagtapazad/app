@@ -1242,12 +1242,6 @@ export default function ChatInterface({ user }) {
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* Personalize Toggle */}
-              <div className="flex items-center gap-2">
-                <Switch checked={personalized} onCheckedChange={setPersonalized} />
-                <span className="text-xs text-gray-400">Personalize</span>
-              </div>
             </div>
 
             {/* Input */}
