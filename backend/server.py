@@ -459,10 +459,16 @@ async def get_analytics(
 app.include_router(api_router)
 
 # CORS
+cors_origins = os.environ.get('CORS_ORIGINS', '*')
+if cors_origins != '*':
+    origins_list = [origin.strip() for origin in cors_origins.split(',')]
+else:
+    origins_list = ['*']
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=["https://smart-agent-hub-37.preview.emergentagent.com", "http://localhost:3000"],
+    allow_origins=origins_list,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],
