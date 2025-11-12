@@ -416,17 +416,18 @@ async def delete_thread(
 @api_router.get("/analytics")
 async def get_analytics(
     authorization: Optional[str] = Header(None),
-    session_token: Optional[str] = Header(None)
+    session_token: Optional[str] = Header(None),
+    limit: int = 100
 ):
     """Get user's usage analytics"""
     user = await get_current_user(authorization, session_token)
     user_id = user.id if user else "demo-user-123"
 
-    # Get analytics entries
+    # Get analytics entries with limit
     entries = await db.analytics.find(
         {"user_id": user_id},
         {"_id": 0}
-    ).to_list(1000)
+    ).sort("timestamp", -1).limit(limit).to_list(limit)
 
     for entry in entries:
         if isinstance(entry.get('timestamp'), str):
@@ -435,24 +436,41 @@ async def get_analytics(
     # Get credit balance
     credits = await db.user_credits.find_one({"user_id": user_id}, {"_id": 0})
 
-    # Aggregate stats
-    total_queries = len(entries)
-    total_cost = sum([e.get("cost", 0) for e in entries])
-    agent_usage = {}
-
-    for entry in entries:
-        agent_name = entry.get("agent_name", "Unknown")
-        if agent_name not in agent_usage:
-            agent_usage[agent_name] = {"queries": 0, "cost": 0}
-        agent_usage[agent_name]["queries"] += 1
-        agent_usage[agent_name]["cost"] += entry.get("cost", 0)
+    # Aggregate stats from limited entries
+    total_queries = await db.analytics.count_documents({"user_id": user_id})
+    
+    # Calculate total cost using aggregation
+    pipeline = [
+        {"$match": {"user_id": user_id}},
+        {"$group": {
+            "_id": None,
+            "total_cost": {"$sum": "$cost"}
+        }}
+    ]
+    cost_result = await db.analytics.aggregate(pipeline).to_list(1)
+    total_cost = cost_result[0]["total_cost"] if cost_result else 0
+    
+    # Agent usage stats using aggregation
+    agent_pipeline = [
+        {"$match": {"user_id": user_id}},
+        {"$group": {
+            "_id": "$agent_name",
+            "queries": {"$sum": 1},
+            "cost": {"$sum": "$cost"}
+        }}
+    ]
+    agent_results = await db.analytics.aggregate(agent_pipeline).to_list(100)
+    agent_usage = {
+        item["_id"]: {"queries": item["queries"], "cost": item["cost"]}
+        for item in agent_results
+    }
 
     return {
         "total_queries": total_queries,
         "total_cost": total_cost,
         "credits": credits,
         "agent_usage": agent_usage,
-        "recent_entries": entries[-50:]
+        "recent_entries": entries[:50]
     }
 
 # Include router
