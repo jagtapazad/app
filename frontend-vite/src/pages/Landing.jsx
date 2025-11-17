@@ -6,6 +6,13 @@ import { Input } from '@/components/ui/input.jsx';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog.jsx';
 import { toast } from 'sonner';
 import { submitWaitlist, getCurrentUser } from '@/utils/api.js';
+import PrismaticBurst from "@/components/PrismaticBurst";
+import { useRef } from "react";
+import useScrollReveal from "@/hooks/useScrollReveal";
+import TypingText from "@/components/TypingText";
+
+
+
 
 export default function Landing() {
   const [email, setEmail] = useState('');
@@ -21,6 +28,50 @@ export default function Landing() {
   useEffect(() => {
     checkAuth();
   }, []);
+  
+  // Scroll Animation Refs
+  const agentsRef = useRef(null);
+  const superAgentRef = useRef(null);
+  const useCasesRef = useRef(null);
+  const demoRef = useRef(null);
+  const testimonialsRef = useRef(null);
+  const ctaRef = useRef(null);
+
+  // Activate Scroll Animations
+  useScrollReveal(agentsRef);
+  useScrollReveal(superAgentRef);
+  useScrollReveal(useCasesRef);
+  useScrollReveal(demoRef);
+  useScrollReveal(testimonialsRef);
+  useScrollReveal(ctaRef);
+
+  useEffect(() => {
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("revealed");
+        }
+      });
+    },
+    { threshold: 0.15 }
+  );
+
+  const elements = document.querySelectorAll(".reveal-on-scroll");
+  elements.forEach(el => observer.observe(el));
+
+  return () => observer.disconnect();
+}, []);
+
+
+  const [scrolled, setScrolled] = useState(false);
+
+    useEffect(() => {
+      const handleScroll = () => setScrolled(window.scrollY > 40);
+      window.addEventListener("scroll", handleScroll);
+      return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
+
 
   const checkAuth = async () => {
     const token = localStorage.getItem('session_token');
@@ -104,73 +155,132 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden">
-      {/* Animated glowing background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-orange-600/20 rounded-full blur-[150px] animate-pulse" />
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px]" />
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-purple-600/5 rounded-full blur-[180px]" />
-      </div>
+    <div className="min-h-screen relative overflow-hidden ">
 
       {/* Header */}
-      <header className="relative z-10 px-6 py-6 flex justify-between items-center max-w-7xl mx-auto">
-        <div className="flex items-center gap-1">
-          {/* Logo */}
-          <img 
-            src="https://customer-assets.emergentagent.com/job_smart-dispatch-7/artifacts/ghe15bl1_Screenshot%202025-11-05%20at%2011.17.40%20PM.png" 
-            alt="Sagent AI Logo" 
-            className="w-12 h-12 object-contain"
-          />
-          <span className="text-2xl font-medium text-white">agent AI</span>
+      <header
+        className={`
+          fixed left-0 top-0 w-full z-40 transition-all duration-500 
+          ${scrolled ? "pointer-events-none" : ""}
+        `}
+      >
+        <div
+          className={`
+            mx-auto flex items-center justify-between transition-all duration-500
+            ${scrolled
+              ? "max-w-3xl mt-4 px-6 py-3 rounded-3xl bg-black/20 backdrop-blur-xl border-white/20 shadow-xl pointer-events-auto"
+              : "max-w-7xl px-6 py-6 bg-transparent pointer-events-auto"
+            }
+          `}
+        >
+          {/* LOGO */}
+          <div className="flex items-center gap-2 transition-all duration-500">
+            <img
+              src="https://customer-assets.emergentagent.com/job_smart-dispatch-7/artifacts/ghe15bl1_Screenshot%202025-11-05%20at%2011.17.40%20PM.png"
+              alt="Sagent AI Logo"
+              className={`object-contain transition-all duration-500
+                ${scrolled ? "w-8 h-8" : "w-12 h-12"}
+              `}
+            />
+            <span
+              className={`
+                text-white font-stacksans font-semibold transition-all duration-500
+                ${scrolled ? "text-lg" : "text-2xl"}
+              `}
+            >
+              agent AI
+            </span>
+          </div>
+
+          {/* SIGN IN */}
+          {user ? (
+            <Button
+              variant="ghost"
+              className={`
+                text-white font-stacksans border border-white/20 hover:bg-white/10 transition-all duration-500
+                ${scrolled ? "px-4 py-1 text-sm" : "px-6 py-2 text-base"}
+              `}
+              onClick={() => navigate("/chat")}
+            >
+              Chat
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              className={`
+                text-white
+                font-stacksans
+                ${scrolled ? "px-4 py-1 text-sm" : "px-6 py-2 text-base"}
+              `}
+              onClick={() => {
+                const redirectUrl = `${window.location.origin}/chat`;
+                window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(
+                  redirectUrl
+                )}`;
+              }}
+            >
+              Sign In
+            </Button>
+          )}
         </div>
-        {user ? (
-          <Button
-            variant="ghost"
-            className="text-white hover:bg-white/10 border border-white/20"
-            onClick={() => navigate('/chat')}
-            data-testid="chat-button"
-          >
-            Chat
-          </Button>
-        ) : (
-          <Button
-            variant="ghost"
-            className="text-white hover:bg-white/10 border border-white/20"
-            onClick={() => {
-              const redirectUrl = `${window.location.origin}/chat`;
-              window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
-            }}
-            data-testid="signin-button"
-          >
-            Sign In
-          </Button>
-        )}
       </header>
 
+      {/* Spacer so content doesn’t jump under navbar */}
+      <div className="h-24"></div>
+
+
       {/* Hero Section */}
-      <main className="relative z-10 max-w-6xl mx-auto px-6 py-20">
-        {/* Hero Content */}
-        <div className="text-center space-y-8 mb-32">
-          <h1 className="text-6xl sm:text-7xl lg:text-8xl font-bold leading-tight text-white">
-            Let the Right AI
-            <br />
-            <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              Handle Your Task.
-            </span>
-          </h1>
 
-          <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
-            Sagent AI intelligently routes your queries to specialized agents,
-            delivering comprehensive results beyond what any single AI can provide.
-          </p>
+       {/* Full-Screen Hero Section */}
+        <section className="relative z-20 h-screen flex flex-col text-center px-6 pointer-events-none">
 
-          {/* Top Join Waitlist - Shows email input on click */}
-          <div className="mt-12">
+          {/* HERO TITLE — centered vertically */}
+          <div className="flex-1 flex flex-col justify-center">
+            <h1 className="font-stacksans font-[650] text-5xl sm:text-7xl lg:text-8xl font-bold leading-tight text-white flex flex-col items-center gap-4">
+              <span>Let the Right AI</span>
+
+              <TypingText
+                text={["Handle Your Task.", "Build Your Product.", "Design Your Ideas."]}
+                typingSpeed={75}
+                pauseDuration={2500}
+                showCursor={true}
+                cursorCharacter=""
+                className="text-5xl sm:text-7xl lg:text-8xl font-bold leading-tight "
+                gradientClasses={[
+                  "bg-gradient-to-b from-[#8CFFDE] to-[#75E7FF]",   // Neon Blue → Deep Blue
+                  "bg-gradient-to-b from-[#75AEFF] to-[#54F8FF]",   // Purple → Deep Violet
+                  "bg-gradient-to-b from-[#A8ADFF] to-[#75FFFF]"    // Aqua → Cyan Blue
+                ]}
+                
+                variableSpeed={{ min: 50, max: 120 }}
+              />
+            </h1>
+          </div>
+
+          {/* SUBTITLE + BUTTON — sits below, with large spacing */}
+          <div className="mt-8 sm:mt-12 lg:mt-16 mb-40 pointer-events-auto flex flex-col items-center gap-10">
+            <p className="font-stacksans text-2xl text-white/80 max-w-3xl mx-auto leading-relaxed tracking-tight">
+              Sagent AI intelligently routes your queries to specialized agents,
+              delivering comprehensive results beyond what any single AI can provide.
+            </p>
+
             {!showTopEmailInput ? (
               <Button
                 onClick={() => setShowTopEmailInput(true)}
-                className="h-14 px-8 bg-white text-black hover:bg-gray-200 font-medium text-lg"
-                data-testid="top-join-waitlist-button"
+                className="
+                  h-14 px-8 font-stacksans font-medium text-lg transition-all duration-300
+
+                  /* Default state */
+                  bg-black/25 
+                  backdrop-blur-md  
+                  text-cyan-300
+
+                  /* Hover state */
+                  hover:text-white
+                  hover:bg-gradient-to-r hover:from-cyan-500/20 hover:to-blue-700/20
+                  hover:border-transparent
+                  
+                "
               >
                 Join Waitlist
                 <ArrowRight className="ml-2 w-5 h-5" />
@@ -184,102 +294,106 @@ export default function Landing() {
                     value={topEmail}
                     onChange={(e) => setTopEmail(e.target.value)}
                     className="flex-1 bg-white/5 border-white/20 text-white placeholder:text-gray-500 h-14 text-base backdrop-blur-sm"
-                    data-testid="top-email-input"
                     autoFocus
                   />
                   <Button
                     onClick={handleTopWaitlistSubmit}
                     disabled={loading || !topEmail}
                     className="h-14 px-6 bg-white text-black hover:bg-gray-200 font-medium"
-                    data-testid="top-go-button"
                   >
-                    {loading ? 'Joining...' : 'Go'}
+                    {loading ? "Joining..." : "Go"}
                   </Button>
                 </div>
               </div>
             )}
           </div>
-        </div>
 
+        </section>
+
+
+
+   
+      <main className="relative z-20 max-w-6xl mx-auto px-6 py-20 pointer-events-none">
+        
         {/* Integrated Agents Section */}
-        <div className="text-center mb-20">
-          <p className="text-gray-500 text-sm uppercase tracking-wider mb-8">Integrated with 30+ AI Agents</p>
+        <div ref={agentsRef} className="reveal-on-scroll text-center mb-20">
+          <p className=" font-stacksans text-gray-500 text-sm uppercase tracking-wider mb-8">Integrated with 30+ AI Agents</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
-            <div className="p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl">
-              <div className="text-4xl font-bold text-white mb-2">30+</div>
-              <div className="text-sm text-gray-400">Specialized Top AI Agents</div>
+            <div className="p-6 bg-black/25 backdrop-blur-sm rounded-xl">
+              <div className="font-stacksans text-4xl font-bold text-white mb-2">30+</div>
+              <div className="font-stacksans text-sm text-gray-400">Specialized Top AI Agents</div>
             </div>
-            <div className="p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl">
-              <div className="text-4xl font-bold text-green-400 mb-2">↓20%</div>
-              <div className="text-sm text-gray-400">Reduction in Reprompting</div>
+            <div className="p-6 bg-black/25 backdrop-blur-sm rounded-xl">
+              <div className="font-stacksans text-4xl font-bold text-green-400 mb-2">↓20%</div>
+              <div className="font-stacksans text-sm text-gray-400">Reduction in Reprompting</div>
             </div>
-            <div className="p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl">
-              <div className="text-4xl font-bold text-blue-400 mb-2">✓</div>
-              <div className="text-sm text-gray-400">Top-Tier Precision — Benchmarked against Perplexity & OpenAI</div>
+            <div className="p-6 bg-black/25 backdrop-blur-sm rounded-xl">
+              <div className="font-stacksans text-4xl font-bold text-blue-400 mb-2">✓</div>
+              <div className="font-stacksans text-sm text-gray-400">Top-Tier Precision — Benchmarked against Perplexity & OpenAI</div>
             </div>
-            <div className="p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl">
-              <div className="text-4xl font-bold text-purple-400 mb-2">∞</div>
-              <div className="text-sm text-gray-400">Ask Any Subject</div>
+            <div className="p-6 bg-black/25 backdrop-blur-sm rounded-xl">
+              <div className="font-stacksans text-4xl font-bold text-purple-400 mb-2">∞</div>
+              <div className="font-stacksans text-sm text-gray-400">Ask Any Subject</div>
             </div>
           </div>
         </div>
 
         {/* One Super Agent Section */}
-        <div className="text-center mb-32">
-          <h2 className="text-5xl sm:text-6xl font-bold text-white mb-6">
+        <div ref={superAgentRef} className="reveal-on-scroll text-center mb-32">
+          <h2 className="font-stacksans text-5xl sm:text-6xl font-bold text-white mb-6">
             One Super Agent.
             <br />
-            <span className="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+            <span className="font-stacksans bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
               Infinite capabilities.
             </span>
           </h2>
-          <p className="text-xl text-gray-400 max-w-3xl mx-auto">
+          <p className="font-stacksans text-2xl text-white/80 max-w-4xl mx-auto leading-relaxed tracking-tight">
             Stop switching between multiple AI tools. Sagent AI orchestrates the best agents
             for your specific needs, delivering comprehensive, multi-dimensional insights.
           </p>
         </div>
 
         {/* Use Cases Grid */}
-        <div className="grid md:grid-cols-3 gap-8 mb-32">
-          <div className="p-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:bg-white/10 transition-all">
+        <div ref={useCasesRef} className="reveal-on-scroll grid md:grid-cols-3 gap-8 mb-32 pointer-events-auto">
+          <div className="p-8 bg-black/15 backdrop-blur-sm  rounded-2xl hover:bg-black/25 transition-all">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center mb-6">
               <Sparkles className="w-6 h-6 text-white" />
             </div>
-            <h3 className="text-2xl font-bold text-white mb-4">Market Research</h3>
-            <p className="text-gray-400 leading-relaxed">
+            <h3 className="font-stacksans text-2xl font-bold text-white mb-4">Market Research</h3>
+            <p className="font-stacksans text-gray-400 leading-relaxed">
               Aggregate insights from multiple specialized research agents to get comprehensive market analysis in seconds.
             </p>
           </div>
 
-          <div className="p-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:bg-white/10 transition-all">
+          <div className="p-8 bg-black/15 backdrop-blur-sm  rounded-2xl hover:bg-black/25 transition-all">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-6">
               <Sparkles className="w-6 h-6 text-white" />
             </div>
-            <h3 className="text-2xl font-bold text-white mb-4">Scientific Research</h3>
-            <p className="text-gray-400 leading-relaxed">
+            <h3 className="font-stacksans text-2xl font-bold text-white mb-4">Scientific Research</h3>
+            <p className="font-stacksans text-gray-400 leading-relaxed">
               Route complex scientific queries to specialized agents for accurate, citation-backed research.
             </p>
           </div>
 
-          <div className="p-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:bg-white/10 transition-all">
+          <div className="p-8 bg-black/15 backdrop-blur-sm  rounded-2xl hover:bg-black/25 transition-all">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center mb-6">
               <Sparkles className="w-6 h-6 text-white" />
             </div>
-            <h3 className="text-2xl font-bold text-white mb-4">People Search</h3>
-            <p className="text-gray-400 leading-relaxed">
+            <h3 className="font-stacksans text-2xl font-bold text-white mb-4">People Search</h3>
+            <p className="font-stacksans text-gray-400 leading-relaxed">
               Find and analyze information about people across multiple sources with intelligent agent routing.
             </p>
           </div>
         </div>
 
         {/* Chat Interface Demo */}
-        <div className="mb-32">
+        <div ref={demoRef} className="reveal-on-scroll mb-32">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-white mb-4">See It In Action</h2>
-            <p className="text-gray-400 text-lg">Watch how Sagent AI delivers comprehensive, multi-dimensional research</p>
+            <h2 className="font-stacksans text-6xl font-bold text-white mb-4">See It In Action</h2>
+            <p className="font-stacksans text-2xl text-white/80 max-w-4xl mx-auto leading-relaxed tracking-tight">Watch how Sagent AI delivers comprehensive, multi-dimensional research</p>
           </div>
           
-          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 max-w-4xl mx-auto">
+          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 max-w-4xl mx-auto pointer-events-auto">
             {/* Demo Chat Query */}
             <div className="mb-6">
               <h3 className="text-2xl font-bold text-white mb-3">Find me reddits where users want 10-minute fashion delivery</h3>
@@ -370,7 +484,7 @@ export default function Landing() {
         </div>
 
         {/* Testimonials Section */}
-        <div className="mb-32">
+        <div ref={testimonialsRef} className="reveal-on-scroll mb-32 pointer-events-auto">
           <h2 className="text-4xl font-bold text-center text-white mb-12">Trusted by Industry Leaders</h2>
           <div className="grid md:grid-cols-3 gap-8">
             {/* Testimonial 1 - Phillip Kreger */}
@@ -424,7 +538,7 @@ export default function Landing() {
         </div>
 
         {/* Final CTA */}
-        <div className="text-center">
+        <div ref={ctaRef} className="reveal-on-scroll text-center">
           <h2 className="text-5xl font-bold text-white mb-6">
             Ready to experience
             <br />
@@ -434,7 +548,7 @@ export default function Landing() {
           </h2>
           
           {/* Bottom Email + Join Waitlist */}
-          <div className="mt-8 max-w-2xl mx-auto">
+          <div className="mt-8 max-w-2xl mx-auto pointer-events-auto">
             <div className="flex gap-3">
               <Input
                 type="email"
@@ -459,7 +573,7 @@ export default function Landing() {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 py-12 px-6 text-center text-gray-600 text-sm border-t border-white/10">
+      <footer className="relative z-20 py-12 px-6 text-center text-gray-600 text-sm border-t border-white/10">
         <p>&copy; 2025 Sagent AI. All rights reserved.</p>
       </footer>
 
@@ -523,6 +637,27 @@ export default function Landing() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* TRUE fullscreen fixed background */}
+      <div className="fixed inset-0 z-0 ">
+        <PrismaticBurst
+          animationType="hover"
+          intensity={2}
+          speed={0.1}
+          distort={0}
+          paused={false}
+          offset={{ x: 0, y: 0 }}
+          hoverDampness={3}
+          rayCount={0}
+          mixBlendMode="screen"
+          colors={['#00eeff', '#0077ff', '#000014']}
+        />
+      </div>
+      {/* Cinematic Dark Blur Overlay */}
+      <div className="fixed inset-0 z-10 pointer-events-none 
+        bg-gradient-to-b from-black/60 via-black/40 to-black/70 
+        backdrop-blur-[4px]">
+      </div>
     </div>
   );
 }
