@@ -495,7 +495,13 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup_db():
     """Initialize database with default agents"""
-    count = await db.agents.count_documents({})
+    try:
+        count = await db.agents.count_documents({})
+    except Exception as e:
+        logger.error(f"Failed to connect to MongoDB during startup: {e}")
+        logger.warning("Server will continue but database operations may fail")
+        return
+    
     if count == 0:
         default_agents = [
             {"id": "scira_ai", "name": "Scira AI", "categories": ["People", "Market Research", "Scientific Research", "Others"], "api_url": "https://api.scira.ai/docs", "api_key_env": "SCIRA_AI_KEY", "is_opensource": False, "cost_per_query": 0.05, "description": "Comprehensive research agent for people, market, and scientific research", "icon_url": None},
