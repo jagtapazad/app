@@ -6,13 +6,13 @@ import { Input } from '@/components/ui/input.jsx';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog.jsx';
 import { toast } from 'sonner';
 import { submitWaitlist, getCurrentUser } from '@/utils/api.js';
-import PrismaticBurst from "@/components/PrismaticBurst";
+import PrismaticBurst from "@/components/LandingPage/PrismaticBurst";
 import { useRef } from "react";
 import useScrollReveal from "@/hooks/useScrollReveal";
-import TypingText from "@/components/TypingText";
-import MagicBento_Agents from "@/components/MagicBento_Agents";
-import MagicBento_Research from "@/components/MagicBento_Research";
-import MagicBento_Testimonials from "@/components/MagicBento_Testimonials";
+import TypingText from "@/components/LandingPage/TypingText";
+import MagicBento_Agents from "@/components/LandingPage/MagicBento_Agents";
+import MagicBento_Research from "@/components/LandingPage/MagicBento_Research";
+import MagicBento_Testimonials from "@/components/LandingPage/MagicBento_Testimonials";
 
 
 

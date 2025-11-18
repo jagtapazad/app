@@ -9,6 +9,12 @@ import { previewAgentChain, getChatHistory, deepagentChat, deepagentState } from
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { v4 as uuidv4 } from 'uuid';
+import { ChevronLeft, ChevronRight, Bot, Tag } from 'lucide-react';
+
+//frontend imports
+import DotGrid from "@/components/ChatInterface/DotGrid.jsx";
+
+
 
 const markdownComponents = {
   a: ({ href, children }) => (
@@ -870,109 +876,215 @@ export default function ChatInterface({ user }) {
   );
 
   return (
-    <div className="min-h-screen bg-black flex">
+  <div className="relative h-screen overflow-hidden">
+
+    {/* DotGrid Background */}
+    <div className="absolute inset-0 -z-10">
+      <DotGrid
+        dotSize={3}
+        gap={20}
+        baseColor="#223a38"
+        activeColor="#34d0ff"
+        proximity={100}
+        shockRadius={300}
+        shockStrength={4}
+        resistance={900}
+        returnDuration={5}
+      />
+    </div>
+
+    {/* Main Layout Wrapper — only ONE */}
+    <div className="backdrop-blur-[1px] flex min-h-screen">
       {/* Left Sidebar */}
-      <aside className={`${sidebarOpen ? 'w-72' : 'w-0'} border-r border-white/10 bg-black/50 backdrop-blur-sm transition-all duration-300 overflow-hidden flex flex-col`}>
-        <div className="p-4 border-b border-white/10">
-          <div className="flex items-center gap-1 mb-4">
-            <img
-              src="https://customer-assets.emergentagent.com/job_smart-dispatch-7/artifacts/ghe15bl1_Screenshot%202025-11-05%20at%2011.17.40%20PM.png"
-              alt="Sagent AI Logo"
-              className="w-8 h-8 object-contain"
-            />
-            <span className="text-lg font-medium text-white">agent AI</span>
-          </div>
-          <Button
-            onClick={createNewThread}
-            className="w-full bg-white text-black hover:bg-gray-200 h-10 mb-3"
-            data-testid="new-chat-button"
+<aside
+  className={`${sidebarOpen ? 'w-72' : 'w-15'} 
+  bg-black/65 backdrop-blur-sm transition-[width] ease-in-out duration-300 
+  overflow-hidden flex flex-col relative`}
+>
+
+  {/* ---------- TOP SECTION ---------- */}
+  <div className="border-b border-white/10 relative">
+
+    {/* Top Row — LOGO + Collapse Button */}
+    <div className="flex items-center justify-between px-4 py-4">
+
+      {/* Always show LOGO */}
+      <div className="flex items-center gap-2">
+        <img
+          src="https://customer-assets.emergentagent.com/job_smart-dispatch-7/artifacts/ghe15bl1_Screenshot%202025-11-05%20at%2011.17.40%20PM.png"
+          alt="Sagent AI Logo"
+          className="w-8 h-8 object-contain"
+        />
+
+        {/* Hide only the text when collapsed */}
+        {sidebarOpen && (
+          <span className="font-stacksans text-lg font-medium text-white">
+            agent AI
+          </span>
+        )}
+      </div>
+
+      {/* Collapse Toggle */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white"
+      >
+        {sidebarOpen ? (
+          <ChevronLeft className="w-4 h-4" />
+        ) : (
+          <ChevronRight className="w-4 h-4" />
+        )}
+      </button>
+    </div>
+
+    {/* New Chat Button */}
+    <div className="px-4">
+      {sidebarOpen ? (
+        <Button
+          onClick={createNewThread}
+          className="w-full font-stacksans transition-all duration-300
+            bg-white/5 text-white/60 hover:text-white
+            hover:bg-gradient-to-r hover:from-cyan-500/20 hover:to-blue-700/20
+            hover:border-transparent h-12 mb-3"
+        >
+          <Plus className="w-4 h-4" />
+          New Chat
+        </Button>
+      ) : (
+        <button
+          onClick={createNewThread}
+          className="w-full flex items-center justify-center py-3 mb-3 
+                    hover:bg-gradient-to-r hover:from-cyan-500/20 hover:to-blue-700/20
+                    hover:border-transparent h-12 mb-3 rounded-lg transition"
+        >
+          <Plus className="w-5 h-5 text-white/70" />
+        </button>
+      )}
+    </div>
+
+    {/* Search Bar */}
+    <div className="px-4 pb-4">
+      {sidebarOpen ? (
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <Input
+            placeholder="Search Chats..."
+            value={searchHistory}
+            onChange={(e) => setSearchHistory(e.target.value)}
+            className="font-stacksans pl-9 bg-white/5 border-white/0 text-white 
+              placeholder:text-gray-500 h-9 text-sm
+              focus:bg-white/10 focus:outline-none focus:ring-0 focus:border-white/0"
+          />
+        </div>
+      ) : (
+        <button
+          onClick={() => {
+            setSidebarOpen(true);
+            setTimeout(() => {
+              const el = document.querySelector('input[placeholder="Search Chats..."]');
+              el?.focus();
+            }, 200);
+          }}
+          className="w-full flex items-center justify-center py-3 hover:bg-white/10 rounded-lg transition"
+        >
+          <Search className="w-5 h-5 text-white/60" />
+        </button>
+      )}
+    </div>
+  </div>
+
+  {/* ---------- THREAD LIST ---------- */}
+  <div className="flex-1 overflow-y-auto p-2">
+
+    {sidebarOpen ? (
+      <div className="space-y-1">
+        {filteredThreads.map((thread) => (
+          <div
+            key={thread.id}
+            className={`group relative rounded-lg hover:bg-white/5 transition-colors ${
+              currentThread?.id === thread.id
+                ? 'bg-gradient-to-r from-cyan-500/20 to-blue-700/20'
+                : ''
+            }`}
           >
-            <Plus className="w-4 h-4 mr-2" />
-            New Chat
-          </Button>
-
-          {/* Search History */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
-            <Input
-              placeholder="Search conversations..."
-              value={searchHistory}
-              onChange={(e) => setSearchHistory(e.target.value)}
-              className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-gray-500 h-9 text-sm"
-            />
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-2">
-          <div className="space-y-1">
-            {filteredThreads.map((thread) => (
-              <div
-                key={thread.id}
-                className={`group relative rounded-lg hover:bg-white/5 transition-colors ${
-                  currentThread?.id === thread.id ? 'bg-white/10 border border-white/20' : ''
-                }`}
-              >
-                <button
-                  onClick={() => {
-                    setCurrentThread(thread);
-                    setActiveThreadId(thread.id);
-                  }}
-                  className="w-full text-left p-3"
-                  data-testid={`thread-${thread.id}`}
-                >
-                  <div className="flex items-start gap-2">
-                    <MessageSquare className="w-4 h-4 text-gray-400 mt-1 flex-shrink-0" />
-                    <div className="flex-1 min-w-0 pr-6">
-                      <p className="text-sm text-white truncate font-medium">{thread.title || thread.messages?.[0]?.query || thread.query || 'Untitled'}</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {new Date(thread.timestamp).toLocaleDateString()} · {thread.messages?.length || 1} msg
-                      </p>
-                    </div>
-                  </div>
-                </button>
-
-                {/* Delete Button */}
-                <button
-                  onClick={(e) => deleteThread(thread.id, e)}
-                  className="absolute right-2 top-3 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-red-500/20 rounded"
-                  data-testid={`delete-thread-${thread.id}`}
-                >
-                  <Trash2 className="w-4 h-4 text-gray-400 hover:text-red-400" />
-                </button>
+            <button
+              onClick={() => {
+                setCurrentThread(thread);
+                setActiveThreadId(thread.id);
+              }}
+              className="w-full text-left p-3"
+              data-testid={`thread-${thread.id}`}
+            >
+              <div className="flex items-start gap-2">
+                <div className="flex-1 min-w-0 pr-6">
+                  <p className="text-sm text-white truncate font-medium">
+                    {thread.title || thread.messages?.[0]?.query || thread.query || 'Untitled'}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {new Date(thread.timestamp).toLocaleDateString()} ·{" "}
+                    {thread.messages?.length || 1}{" "}
+                    {thread.messages?.length === 1 ? "Message" : "Messages"}
+                  </p>
+                </div>
               </div>
-            ))}
+            </button>
           </div>
-        </div>
+        ))}
+      </div>
+    ) : (
+      <div className="flex flex-col justify-start items-center gap-6 p-4">
+        {/* No thread icons */}
+      </div>
+    )}
+  </div>
 
-        <div className="p-4 border-t border-white/10">
-          <div className="flex items-center gap-4 text-sm">
-            <a href="/agents" className="text-gray-400 hover:text-white transition-colors">Agents</a>
-            <a href="/pricing" className="text-gray-400 hover:text-white transition-colors">Pricing</a>
-          </div>
-        </div>
-      </aside>
+  {/* ---------- FOOTER LINKS ---------- */}
+  <div className="p-6 border-t border-white/0">
+    {sidebarOpen ? (
+      <div className="flex items-center justify-center gap-12 text-sm">
+        <a href="/agents" className="font-stacksans text-gray-400 hover:text-white transition-colors">Agents</a>
+        <a href="/pricing" className="font-stacksans text-gray-400 hover:text-white transition-colors">Pricing</a>
+      </div>
+    ) : (
+      <div className="flex flex-col items-center gap-3">
+        <a href="/agents" className="p-2 rounded-lg transition flex items-center justify-center">
+          <img src="/icons/agents.png" className="w-8 h-8 invert 
+                                                  filter                     /* IMPORTANT */
+                                                  opacity-70 
+                                                  hover:opacity-100 
+                                                  hover:brightness-150 
+                                                  transition" />
+        </a>
+        <a href="/pricing" className="p-2 rounded-lg transition flex items-center justify-center">
+          <img src="/icons/pricing.png" className="w-5 h-5 invert 
+                                                  filter                     /* IMPORTANT */
+                                                  opacity-70 
+                                                  hover:opacity-100 
+                                                  hover:brightness-150 
+                                                  transition" />
+        </a>
+      </div>
+    )}
+  </div>
+
+</aside>
+
+
+
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        <header className="border-b border-white/10 bg-black/50 backdrop-blur-sm">
+        <header className="border-b border-white/0 bg-grey-500/5 backdrop-blur-sm">
           <div className="px-6 py-4 flex justify-between items-center">
             <div className="flex items-center gap-4">
-              {!sidebarOpen && (
-                <Button
-                  variant="ghost"
-                  onClick={() => setSidebarOpen(true)}
-                  className="text-white hover:bg-white/10"
-                >
-                  <MessageSquare className="w-5 h-5" />
-                </Button>
-              )}
+              
             </div>
             <div className="flex items-center gap-4">
-              <a href="/agents" className="text-gray-400 hover:text-white transition-colors text-sm">Agents</a>
-              <a href="/pricing" className="text-gray-400 hover:text-white transition-colors text-sm">Pricing</a>
+              <a href="/agents" className="text-gray-400 font-stacksans hover:text-white transition-colors text-base">Agents</a>
+              <a href="/pricing" className="text-gray-400 font-stacksans hover:text-white transition-colors text-base">Pricing</a>
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500" />
-                <span className="text-white text-sm">{user?.name}</span>
+                <span className="text-white font-stacksans text-base">{user?.name}</span>
               </div>
             </div>
           </div>
@@ -987,8 +1099,8 @@ export default function ChatInterface({ user }) {
                   alt="Sagent AI Logo"
                   className="w-16 h-16 mx-auto mb-4 object-contain"
                 />
-                <h2 className="text-3xl font-bold text-white mb-3">What can I help with?</h2>
-                <p className="text-gray-400 mb-6">Ask a question and let our specialized AI agents research it for you</p>
+                <h2 className="font-stacksans text-3xl font-bold text-white mb-3">What can I help with?</h2>
+                <p className="font-stacksans text-gray-400 mb-6">Ask a question and let our specialized AI agents research it for you</p>
 
                 {/* Example Prompts - Compact */}
                 <div className="grid md:grid-cols-2 gap-3 max-w-2xl mx-auto">
@@ -996,9 +1108,9 @@ export default function ChatInterface({ user }) {
                     <button
                       key={i}
                       onClick={() => setQuery(prompt)}
-                      className="text-left p-3 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all group"
+                      className="font-stacksans text-left p-3 bg-white/5 border border-white/5 rounded-lg hover:bg-white/10 transition-all group"
                     >
-                      <p className="text-sm text-gray-300 group-hover:text-white transition-colors">{prompt}</p>
+                      <p className="text-[14px] text-gray-100 group-hover:text-white transition-colors">{prompt}</p>
                     </button>
                   ))}
                 </div>
@@ -1224,48 +1336,55 @@ export default function ChatInterface({ user }) {
           </div>
         </main>
 
-        {/* Fixed Input Area */}
-        <div className="border-t border-white/10 bg-black/80 backdrop-blur-xl">
-          <div className="max-w-4xl mx-auto px-6 py-6">
-            {/* Controls */}
-            <div className="flex items-center gap-6 mb-3">
-              {/* Search Mode Dropdown */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-400">Mode:</span>
-                <Select value={searchMode} onValueChange={setSearchMode}>
-                  <SelectTrigger className="h-8 w-28 bg-white/5 border-white/20 text-white text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-black/95 border-white/20">
-                    <SelectItem value="quick" className="text-white hover:bg-white/10">Quick</SelectItem>
-                    <SelectItem value="detailed" className="text-white hover:bg-white/10">Detailed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+{/* Fixed Input Area */}
+<div className="border-t border-white/0 bg-black/65 backdrop-blur-sm">
+  <div className="max-w-4xl mx-auto px-6 pt-6 pb-10">
 
-            {/* Input */}
-            <form onSubmit={handleSubmit} className="flex gap-3">
-              <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Ask anything..."
-                className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-gray-500 h-12 text-base focus:border-blue-500"
-                disabled={isExecuting}
-                data-testid="chat-input"
-              />
-              <Button
-                type="submit"
-                disabled={!query.trim() || isExecuting}
-                className="h-12 px-6 bg-blue-500 hover:bg-blue-600 text-white"
-                data-testid="send-button"
-              >
-                <Send className="w-5 h-5" />
-              </Button>
-            </form>
-          </div>
-        </div>
+    {/* Single Row: Mode + Input + Send */}
+    <form onSubmit={handleSubmit} className="flex items-center gap-4">
+
+      {/* Mode Selector */}
+      <div className="flex items-center gap-2">
+        <span className="text-base text-gray-400">Mode:</span>
+
+        <Select value={searchMode} onValueChange={setSearchMode}>
+          <SelectTrigger className="h-14 w-28 bg-white/5 border-white/20 text-white text-xs">
+            <SelectValue />
+          </SelectTrigger>
+
+          <SelectContent className="bg-black/5 border-white/10">
+            <SelectItem value="quick" className="text-sm text-white hover:bg-white/10">Quick</SelectItem>
+            <SelectItem value="detailed" className="text-sm text-white hover:bg-white/10">Detailed</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
+
+      {/* Input */}
+      <Input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Ask anything..."
+        className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-gray-500 placeholder:text-base h-14 text-base focus:border-cyan-500/50"
+        disabled={isExecuting}
+        data-testid="chat-input"
+      />
+
+      {/* Send */}
+      <Button
+        type="submit"
+        disabled={!query.trim() || isExecuting}
+        className="h-14 px-6 bg-gradient-to-r from-cyan-500/40 to-blue-700/40 hover:bg-gradient-to-r hover:from-cyan-500/50 hover:to-blue-700/50 text-white"
+        data-testid="send-button"
+      >
+        <Send className="w-5 h-5" />
+      </Button>
+
+    </form>
+  </div>
+</div>
+
+      </div>
+    </div>
     </div>
   );
 }
