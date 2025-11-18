@@ -10,6 +10,10 @@ import PrismaticBurst from "@/components/PrismaticBurst";
 import { useRef } from "react";
 import useScrollReveal from "@/hooks/useScrollReveal";
 import TypingText from "@/components/TypingText";
+import MagicBento_Agents from "@/components/MagicBento_Agents";
+import MagicBento_Research from "@/components/MagicBento_Research";
+import MagicBento_Testimonials from "@/components/MagicBento_Testimonials";
+
 
 
 
@@ -273,7 +277,7 @@ export default function Landing() {
                   /* Default state */
                   bg-black/25 
                   backdrop-blur-md  
-                  text-cyan-300
+                  text-white/60
 
                   /* Hover state */
                   hover:text-white
@@ -293,14 +297,35 @@ export default function Landing() {
                     placeholder="Enter your email..."
                     value={topEmail}
                     onChange={(e) => setTopEmail(e.target.value)}
-                    className="flex-1 bg-white/5 border-white/20 text-white placeholder:text-gray-500 h-14 text-base backdrop-blur-sm"
+                    className="flex-1 bg-white/5 border-white/0 text-white font-stacksans 
+                      placeholder:text-gray-500 h-14 w-96 
+                      placeholder:text-[15px] placeholder:font-stacksans 
+                      !text-[15px]
+                      backdrop-blur-sm
+                      focus:bg-white/10
+                      focus:outline-none
+                      focus:ring-0
+                      focus-visible:ring-0
+                      focus:border-white/0"
                     autoFocus
                   />
                   <Button
                     onClick={handleTopWaitlistSubmit}
                     disabled={loading || !topEmail}
-                    className="h-14 px-6 bg-white text-black hover:bg-gray-200 font-medium"
-                  >
+                    className="h-14 px-8 font-stacksans font-medium text-lg transition-all duration-300
+
+                      /* Default state */
+                      bg-black/25 
+                      backdrop-blur-md
+                      bg-gradient-to-r from-cyan-500/10 to-blue-700/10
+                      
+                      text-white/60
+
+                      /* Hover state */
+                      hover:text-white
+                      hover:bg-gradient-to-r hover:from-cyan-500/20 hover:to-blue-700/20
+                      hover:border-transparent"
+                      >
                     {loading ? "Joining..." : "Go"}
                   </Button>
                 </div>
@@ -317,33 +342,37 @@ export default function Landing() {
         
         {/* Integrated Agents Section */}
         <div ref={agentsRef} className="reveal-on-scroll text-center mb-20">
-          <p className=" font-stacksans text-gray-500 text-sm uppercase tracking-wider mb-8">Integrated with 30+ AI Agents</p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
-            <div className="p-6 bg-black/25 backdrop-blur-sm rounded-xl">
-              <div className="font-stacksans text-4xl font-bold text-white mb-2">30+</div>
-              <div className="font-stacksans text-sm text-gray-400">Specialized Top AI Agents</div>
-            </div>
-            <div className="p-6 bg-black/25 backdrop-blur-sm rounded-xl">
-              <div className="font-stacksans text-4xl font-bold text-green-400 mb-2">↓20%</div>
-              <div className="font-stacksans text-sm text-gray-400">Reduction in Reprompting</div>
-            </div>
-            <div className="p-6 bg-black/25 backdrop-blur-sm rounded-xl">
-              <div className="font-stacksans text-4xl font-bold text-blue-400 mb-2">✓</div>
-              <div className="font-stacksans text-sm text-gray-400">Top-Tier Precision — Benchmarked against Perplexity & OpenAI</div>
-            </div>
-            <div className="p-6 bg-black/25 backdrop-blur-sm rounded-xl">
-              <div className="font-stacksans text-4xl font-bold text-purple-400 mb-2">∞</div>
-              <div className="font-stacksans text-sm text-gray-400">Ask Any Subject</div>
-            </div>
+          <h2 className="font-stacksans text-5xl sm:text-6xl font-bold text-white mb-20">
+            Integrated With
+            <br />
+            <span className="font-stacksans bg-gradient-to-b from-[#A8ADFF] to-[#75FFFF] bg-clip-text text-transparent">
+              30+ AI Agents.
+            </span>
+            
+          </h2>
+
+          {/* Magic Bento Cards */}
+          <div className="flex justify-center">
+            <MagicBento_Agents
+              enableTilt={true}
+              enableMagnetism={true}
+              enableSpotlight={true}
+              enableBorderGlow={true}
+              particleCount={8}
+              glowColor="0, 200, 255"     // cyan glow (adjust if needed)
+              spotlightRadius={260}
+              textAutoHide={false}        // show full text
+              clickEffect={false}         // optional
+            />
           </div>
         </div>
 
         {/* One Super Agent Section */}
-        <div ref={superAgentRef} className="reveal-on-scroll text-center mb-32">
+        <div ref={superAgentRef} className="reveal-on-scroll text-center mb-40">
           <h2 className="font-stacksans text-5xl sm:text-6xl font-bold text-white mb-6">
             One Super Agent.
             <br />
-            <span className="font-stacksans bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+            <span className="font-stacksans bg-gradient-to-b from-[#A8ADFF] to-[#75FFFF] bg-clip-text text-transparent">
               Infinite capabilities.
             </span>
           </h2>
@@ -354,37 +383,24 @@ export default function Landing() {
         </div>
 
         {/* Use Cases Grid */}
-        <div ref={useCasesRef} className="reveal-on-scroll grid md:grid-cols-3 gap-8 mb-32 pointer-events-auto">
-          <div className="p-8 bg-black/15 backdrop-blur-sm  rounded-2xl hover:bg-black/25 transition-all">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center mb-6">
-              <Sparkles className="w-6 h-6 text-white" />
-            </div>
-            <h3 className="font-stacksans text-2xl font-bold text-white mb-4">Market Research</h3>
-            <p className="font-stacksans text-gray-400 leading-relaxed">
-              Aggregate insights from multiple specialized research agents to get comprehensive market analysis in seconds.
-            </p>
-          </div>
+        <div ref={useCasesRef} className="reveal-on-scroll mb-32 pointer-events-none text-center">
+          
+          <h2 className="font-stacksans text-5xl sm:text-6xl font-bold text-white mb-16">
+            <span className="font-stacksans bg-gradient-to-b from-[#8CFFDE] to-[#75E7FF] bg-clip-text text-transparent">
+              Powerful Use Cases
+            </span>
+          </h2>
 
-          <div className="p-8 bg-black/15 backdrop-blur-sm  rounded-2xl hover:bg-black/25 transition-all">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-6">
-              <Sparkles className="w-6 h-6 text-white" />
-            </div>
-            <h3 className="font-stacksans text-2xl font-bold text-white mb-4">Scientific Research</h3>
-            <p className="font-stacksans text-gray-400 leading-relaxed">
-              Route complex scientific queries to specialized agents for accurate, citation-backed research.
-            </p>
-          </div>
-
-          <div className="p-8 bg-black/15 backdrop-blur-sm  rounded-2xl hover:bg-black/25 transition-all">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center mb-6">
-              <Sparkles className="w-6 h-6 text-white" />
-            </div>
-            <h3 className="font-stacksans text-2xl font-bold text-white mb-4">People Search</h3>
-            <p className="font-stacksans text-gray-400 leading-relaxed">
-              Find and analyze information about people across multiple sources with intelligent agent routing.
-            </p>
-          </div>
+          <MagicBento_Research
+            enableStars={true}
+            enableMagnetism={true}
+            enableTilt={false}
+            glowColor="0, 238, 255"
+            particleCount={10}
+            spotlightRadius={250}
+          />
         </div>
+
 
         {/* Chat Interface Demo */}
         <div ref={demoRef} className="reveal-on-scroll mb-32">
@@ -393,7 +409,7 @@ export default function Landing() {
             <p className="font-stacksans text-2xl text-white/80 max-w-4xl mx-auto leading-relaxed tracking-tight">Watch how Sagent AI delivers comprehensive, multi-dimensional research</p>
           </div>
           
-          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 max-w-4xl mx-auto pointer-events-auto">
+          <div className="bg-black/25 backdrop-blur-sm border border-white/0 rounded-2xl p-8 max-w-4xl mx-auto pointer-events-auto">
             {/* Demo Chat Query */}
             <div className="mb-6">
               <h3 className="text-2xl font-bold text-white mb-3">Find me reddits where users want 10-minute fashion delivery</h3>
@@ -424,7 +440,7 @@ export default function Landing() {
                   <h4 className="text-xl font-semibold text-white mt-6">Reddit Threads Discussing 10-Minute Fashion Delivery</h4>
                   
                   <div className="space-y-3">
-                    <div className="bg-white/5 p-4 rounded-lg hover:bg-white/10 transition-all">
+                    <div className="bg-white/5 p-4 rounded-lg hover:bg-white/10 transition-all backdrop-blur-md">
                       <div className="flex items-start gap-3">
                         <div className="w-8 h-8 rounded bg-orange-500/20 flex items-center justify-center flex-shrink-0">
                           <span className="text-orange-400 font-bold">1</span>
@@ -436,7 +452,7 @@ export default function Landing() {
                       </div>
                     </div>
 
-                    <div className="bg-white/5 p-4 rounded-lg hover:bg-white/10 transition-all">
+                    <div className="bg-white/5 p-4 rounded-lg hover:bg-white/10 transition-all backdrop-blur-md">
                       <div className="flex items-start gap-3">
                         <div className="w-8 h-8 rounded bg-orange-500/20 flex items-center justify-center flex-shrink-0">
                           <span className="text-orange-400 font-bold">2</span>
@@ -448,7 +464,7 @@ export default function Landing() {
                       </div>
                     </div>
 
-                    <div className="bg-white/5 p-4 rounded-lg hover:bg-white/10 transition-all">
+                    <div className="bg-white/5 p-4 rounded-lg hover:bg-white/10 transition-all backdrop-blur-md">
                       <div className="flex items-start gap-3">
                         <div className="w-8 h-8 rounded bg-orange-500/20 flex items-center justify-center flex-shrink-0">
                           <span className="text-orange-400 font-bold">3</span>
@@ -474,7 +490,7 @@ export default function Landing() {
               <div className="text-xs text-gray-500 mb-3">Powered by</div>
               <div className="flex gap-2 flex-wrap">
                 {['Perplexity', 'Exa', 'Scira AI'].map(agent => (
-                  <span key={agent} className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-md text-xs text-blue-300">
+                  <span key={agent} className="px-3 py-1 bg-cyan-500/10 border border-blue-500/20 rounded-md text-xs text-blue-300">
                     {agent}
                   </span>
                 ))}
@@ -485,65 +501,22 @@ export default function Landing() {
 
         {/* Testimonials Section */}
         <div ref={testimonialsRef} className="reveal-on-scroll mb-32 pointer-events-auto">
-          <h2 className="text-4xl font-bold text-center text-white mb-12">Trusted by Industry Leaders</h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Testimonial 1 - Phillip Kreger */}
-            <div className="p-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl">
-              <div className="flex gap-1 mb-4">
-                {[...Array(5)].map((_, idx) => (
-                  <Star key={idx} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                ))}
-              </div>
-              <p className="text-gray-300 mb-6 leading-relaxed">
-                "The ability to get comprehensive insights from multiple AI agents simultaneously is a game-changer. We've seen a 60% reduction in research time."
-              </p>
-              <div>
-                <div className="text-white font-medium">Phillip Kreger</div>
-                <div className="text-gray-500 text-sm">Assistant Professor, UC Berkeley</div>
-              </div>
-            </div>
+          <h2 className="font-stacksans text-5xl text-center text-white mb-12">
+            Trusted by Industry Leaders
+          </h2>
 
-            {/* Testimonial 2 - Rajesh Kumar */}
-            <div className="p-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl">
-              <div className="flex gap-1 mb-4">
-                {[...Array(5)].map((_, idx) => (
-                  <Star key={idx} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                ))}
-              </div>
-              <p className="text-gray-300 mb-6 leading-relaxed">
-                "Sagent AI has completely transformed our research workflow. What used to take our team 3-4 hours now happens in minutes. The multi-agent routing is brilliant."
-              </p>
-              <div>
-                <div className="text-white font-medium">Rajesh Kumar</div>
-                <div className="text-gray-500 text-sm">Product, Meesho</div>
-              </div>
-            </div>
-
-            {/* Testimonial 3 - Arjun Patel */}
-            <div className="p-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl">
-              <div className="flex gap-1 mb-4">
-                {[...Array(5)].map((_, idx) => (
-                  <Star key={idx} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                ))}
-              </div>
-              <p className="text-gray-300 mb-6 leading-relaxed">
-                "Finally, an AI platform that understands context and routes to the right specialist. Our team's productivity has increased by 40% since adopting Sagent AI."
-              </p>
-              <div>
-                <div className="text-white font-medium">Arjun Patel</div>
-                <div className="text-gray-500 text-sm">Analytics, Walmart</div>
-              </div>
-            </div>
-          </div>
+          <MagicBento_Testimonials
+             
+            />
         </div>
 
         {/* Final CTA */}
         <div ref={ctaRef} className="reveal-on-scroll text-center">
-          <h2 className="text-5xl font-bold text-white mb-6">
+          <h2 className="font-stacksans text-5xl sm:text-6xl font-bold text-white mb-6">
             Ready to experience
             <br />
-            <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              intelligent AI routing?
+            <span className="font-stacksans bg-gradient-to-b from-[#A8ADFF] to-[#75FFFF] bg-clip-text text-transparent">
+              Intelligent AI Routing?
             </span>
           </h2>
           
@@ -555,13 +528,33 @@ export default function Landing() {
                 placeholder="Enter your email..."
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="flex-1 bg-white/5 border-white/20 text-white placeholder:text-gray-500 h-14 text-base backdrop-blur-sm"
+                className="flex-1 bg-white/5 border-white/0 text-white font-stacksans 
+                      placeholder:text-gray-500 h-14 w-96 
+                      placeholder:text-[15px] placeholder:font-stacksans 
+                      !text-[15px]
+                      backdrop-blur-sm
+                      focus:bg-white/10
+                      focus:outline-none
+                      focus:ring-0
+                      focus-visible:ring-0
+                      focus:border-white/0"
                 data-testid="bottom-email-input"
               />
               <Button
                 onClick={handleBottomWaitlistSubmit}
                 disabled={loading || !email}
-                className="h-14 px-8 bg-white text-black hover:bg-gray-200 font-medium text-lg whitespace-nowrap"
+                className="h-14 px-8 font-stacksans font-medium text-lg transition-all duration-300
+
+                  /* Default state */
+                  bg-black/25 
+                  backdrop-blur-md  
+                  text-white/60
+
+                  /* Hover state */
+                  hover:text-white
+                  hover:bg-gradient-to-r hover:from-cyan-500/20 hover:to-blue-700/20
+                  hover:border-transparent
+                  "
                 data-testid="bottom-join-button"
               >
                 {loading ? 'Joining...' : 'Join Waitlist'}
