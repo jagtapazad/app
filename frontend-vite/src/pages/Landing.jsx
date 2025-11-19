@@ -636,7 +636,7 @@ export default function Landing() {
         <PrismaticBurst
           animationType="hover"
           intensity={2}
-          speed={0.1}
+          speed={0.4}
           distort={0}
           paused={false}
           offset={{ x: 0, y: 0 }}
