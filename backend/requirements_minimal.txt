@@ -1,0 +1,33 @@
+# Minimal requirements for backend to run
+# Install these first, then add others as needed
+
+# Core FastAPI stack
+fastapi>=0.110.0
+uvicorn>=0.25.0
+starlette>=0.37.0
+pydantic>=2.12.0
+pydantic_core>=2.41.0
+
+# Database
+motor>=3.3.0
+pymongo>=4.5.0
+dnspython>=2.0.0,<3.0.0
+
+# HTTP client
+httpx>=0.28.0
+httpcore>=1.0.0
+requests>=2.32.0
+
+# Environment and config
+python-dotenv>=1.2.0
+
+# Authentication
+python-jose>=3.5.0
+PyJWT>=2.10.0
+bcrypt>=4.1.0
+
+# Utilities
+python-multipart>=0.0.20
+
+
+

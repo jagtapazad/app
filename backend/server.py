@@ -480,17 +480,25 @@ app.include_router(api_router)
 cors_origins = os.environ.get('CORS_ORIGINS', '*')
 if cors_origins != '*':
     origins_list = [origin.strip() for origin in cors_origins.split(',')]
+    # If specific origins are provided, we can use credentials
+    app.add_middleware(
+        CORSMiddleware,
+        allow_credentials=True,
+        allow_origins=origins_list,
+        allow_methods=["*"],
+        allow_headers=["*"],
+        expose_headers=["*"],
+    )
 else:
-    origins_list = ['*']
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=origins_list,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["*"],
-)
+    # If wildcard, cannot use credentials (browser security restriction)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_credentials=False,
+        allow_origins=["*"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+        expose_headers=["*"],
+    )
 
 @app.on_event("startup")
 async def startup_db():

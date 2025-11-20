@@ -47,7 +47,7 @@ export default function Marketplace({ user }) {
         setAgents(response.data || []);
       } catch (authError) {
         // Fallback to public endpoint
-        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/agents/public`);
+        const response = await axios.get('/api/agents/public');
         setAgents(response.data || []);
       }
     } catch (error) {

@@ -49,6 +49,9 @@ dump.rdb
 .DS_Store
 *.pem
 
+# Markdown files
+*.md
+
 # Python
 __pycache__/
 *pyc*

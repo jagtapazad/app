@@ -848,7 +848,7 @@ export default function ChatInterface({ user }) {
 
     try {
       // Delete from database - delete all messages with this thread_id
-      await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/chat/thread/${threadId}`, {
+      await fetch(`/api/chat/thread/${threadId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('session_token')}`

@@ -1,10 +1,15 @@
 import axios from 'axios';
 
-const API_URL = `${import.meta.env.VITE_BACKEND_URL}/api`;
+// Always use relative URL /api which will be proxied by nginx
+// This ensures HTTPS compatibility (no mixed content errors)
+const API_URL = '/api';
 
 const api = axios.create({
   baseURL: API_URL,
   withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 // Add auth token to requests
 api.interceptors.request.use((config) => {
