@@ -1044,6 +1044,15 @@ export default function ChatInterface({ user }) {
                         </div>
                       </div>
                     </button>
+
+                    {/* Delete Button */}
+                    <button
+                      onClick={(e) => deleteThread(thread.id, e)}
+                      className="absolute right-2 top-3 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-red-500/20 rounded"
+                      data-testid={`delete-thread-${thread.id}`}
+                    >
+                      <Trash2 className="w-4 h-4 text-gray-400 hover:text-red-400" />
+                    </button>
                   </div>
                 ))}
               </div>
