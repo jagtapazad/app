@@ -10,7 +10,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { v4 as uuidv4 } from 'uuid';
 import { ChevronLeft, ChevronRight, Bot, Tag } from 'lucide-react';
-
+//clerk
+import { useUser } from '@clerk/clerk-react';
 //frontend imports
 import DotGrid from "@/components/ChatInterface/DotGrid.jsx";
 
@@ -450,7 +451,8 @@ const extractFollowUpMessages = (statePayload) => {
   return collected;
 };
 
-export default function ChatInterface({ user }) {
+export default function ChatInterface() {
+  const { user } = useUser();
   const [query, setQuery] = useState('');
   const [agentChain, setAgentChain] = useState([]);
   const [personalized, setPersonalized] = useState(false);
@@ -1107,8 +1109,20 @@ export default function ChatInterface({ user }) {
                 <a href="/agents" className="text-gray-400 font-stacksans hover:text-white transition-colors text-sm md:text-base hidden md:block">Agents</a>
                 <a href="/pricing" className="text-gray-400 font-stacksans hover:text-white transition-colors text-sm md:text-base hidden md:block">Pricing</a>
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500" />
-                  <span className="text-white font-stacksans text-sm md:text-base hidden sm:inline">{user?.name}</span>
+                  {user?.imageUrl ? (
+                    <img 
+                      src={user.imageUrl} 
+                      alt={user.firstName || 'User'} 
+                      className="w-7 h-7 md:w-8 md:h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-semibold">
+                      {user?.firstName?.[0] || 'U'}
+                    </div>
+                  )}
+                  <span className="text-white font-stacksans text-sm md:text-base hidden sm:inline">
+                    {user?.firstName || user?.emailAddresses?.[0]?.emailAddress || 'User'}
+                  </span>
                 </div>
               </div>
             </div>

@@ -13,6 +13,8 @@ import TypingText from "@/components/LandingPage/TypingText";
 import MagicBento_Agents from "@/components/LandingPage/MagicBento_Agents";
 import MagicBento_Research from "@/components/LandingPage/MagicBento_Research";
 import MagicBento_Testimonials from "@/components/LandingPage/MagicBento_Testimonials";
+//Clerk Authentication
+import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
 
 
 
@@ -161,54 +163,47 @@ export default function Landing() {
   return (
     <div className="min-h-screen relative overflow-hidden ">
 
-      {/* Header */}
-      <header
-        className={`
-          fixed left-0 top-0 w-full z-40 transition-all duration-500 
-          ${scrolled ? "pointer-events-none" : ""}
-        `}
-      >
-        <div
+
+  {/* Header */}
+  <header
+    className={`
+      fixed left-0 top-0 w-full z-40 transition-all duration-500 
+      ${scrolled ? "pointer-events-none" : ""}
+    `}
+  >
+    <div
+      className={`
+        mx-auto flex items-center justify-between transition-all duration-500
+        ${scrolled
+          ? "max-w-3xl mt-4 px-6 py-3 rounded-3xl bg-black/20 backdrop-blur-xl border-white/20 shadow-xl pointer-events-auto"
+          : "max-w-7xl px-6 py-6 bg-transparent pointer-events-auto"
+        }
+      `}
+    >
+      {/* LOGO */}
+      <div className="flex items-center gap-2 transition-all duration-500">
+        <img
+          src="https://customer-assets.emergentagent.com/job_smart-dispatch-7/artifacts/ghe15bl1_Screenshot%202025-11-05%20at%2011.17.40%20PM.png"
+          alt="Sagent AI Logo"
+          className={`object-contain transition-all duration-500
+            ${scrolled ? "w-8 h-8" : "w-12 h-12"}
+          `}
+        />
+        <span
           className={`
-            mx-auto flex items-center justify-between transition-all duration-500
-            ${scrolled
-              ? "max-w-3xl mt-4 px-6 py-3 rounded-3xl bg-black/20 backdrop-blur-xl border-white/20 shadow-xl pointer-events-auto"
-              : "max-w-7xl px-6 py-6 bg-transparent pointer-events-auto"
-            }
+            text-white font-stacksans font-semibold transition-all duration-500
+            ${scrolled ? "text-lg" : "text-2xl"}
           `}
         >
-          {/* LOGO */}
-          <div className="flex items-center gap-2 transition-all duration-500">
-            <img
-              src="https://customer-assets.emergentagent.com/job_smart-dispatch-7/artifacts/ghe15bl1_Screenshot%202025-11-05%20at%2011.17.40%20PM.png"
-              alt="Sagent AI Logo"
-              className={`object-contain transition-all duration-500
-                ${scrolled ? "w-8 h-8" : "w-12 h-12"}
-              `}
-            />
-            <span
-              className={`
-                text-white font-stacksans font-semibold transition-all duration-500
-                ${scrolled ? "text-lg" : "text-2xl"}
-              `}
-            >
-              agent AI
-            </span>
-          </div>
+          agent AI
+        </span>
+      </div>
 
-          {/* SIGN IN */}
-          {user ? (
-            <Button
-              variant="ghost"
-              className={`
-                text-white font-stacksans border border-white/20 hover:bg-white/10 transition-all duration-500
-                ${scrolled ? "px-4 py-1 text-sm" : "px-6 py-2 text-base"}
-              `}
-              onClick={() => navigate("/chat")}
-            >
-              Chat
-            </Button>
-          ) : (
+      {/* SIGN IN / USER SECTION */}
+      <div className="flex items-center gap-3">
+        {/* Shows only when user is NOT signed in */}
+        <SignedOut>
+          <SignInButton mode="modal">
             <Button
               variant="ghost"
               className={`
@@ -216,18 +211,35 @@ export default function Landing() {
                 font-stacksans
                 ${scrolled ? "px-4 py-1 text-sm" : "px-6 py-2 text-base"}
               `}
-              onClick={() => {
-                const redirectUrl = `${window.location.origin}/chat`;
-                window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(
-                  redirectUrl
-                )}`;
-              }}
             >
               Sign In
             </Button>
-          )}
-        </div>
-      </header>
+          </SignInButton>
+        </SignedOut>
+
+        {/* Shows only when user IS signed in */}
+        <SignedIn>
+          <Button
+            variant="ghost"
+            className={`
+              text-white font-stacksans 
+              bg-gradient-to-r from-cyan-500/15 to-blue-700/15
+              /* Hover state */
+              hover:text-white
+              hover:bg-gradient-to-r hover:from-cyan-500/30 hover:to-blue-700/30
+              hover:border-transparent transition-all duration-500
+              ${scrolled ? "px-4 py-1 text-sm" : "px-6 py-2 text-base"}
+            `}
+            onClick={() => navigate("/chat")}
+          >
+            Chat
+          </Button>
+          <UserButton afterSignOutUrl="/" />
+        </SignedIn>
+      </div>
+    </div>
+  </header>
+
 
       {/* Spacer so content doesn’t jump under navbar */}
       <div className="h-24"></div>

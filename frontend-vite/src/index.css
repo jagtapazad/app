@@ -6,6 +6,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Extra fix for iOS Safari viewport bottom bar */
+@supports (-webkit-touch-callout: none) {
+  .ios-bottom-fix {
+    position: sticky !important;
+    bottom: 0 !important;
+  }
+}
 
 
 
